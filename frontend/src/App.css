@@ -1,0 +1,7 @@
+/* src/App.css */
+.App {
+  min-height: 100vh;
+  background-color: #0A0A0A;
+  color: #FFFFFF; /* Es vital añadir esto para que el texto sea visible */
+  font-family: sans-serif; /* O la fuente que estés usando en tu proyecto */
+}
