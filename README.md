@@ -12,28 +12,46 @@ Incluya sus datos básicos para identificación y control.
 
 ## Estado Actual del Proyecto y Próximos Alcances
 
-Hasta la fecha, el desarrollo de la plataforma se ha enfocado firmemente en la arquitectura central y operativa del negocio. Se ha consolidado con éxito la base del servidor, la persistencia de datos en PostgreSQL y los módulos de acceso para asegurar que el control interno sea robusto y seguro antes de expandir el sistema hacia el cliente final.
+Hasta la fecha, el desarrollo de la plataforma ha avanzado significativamente, consolidando tanto la infraestructura principal como gran parte de los módulos administrativos y comerciales. Actualmente, el sistema cuenta con una base sólida y funcional que permite gestionar las operaciones internas del negocio de manera eficiente, manteniendo una arquitectura escalable para futuras mejoras.
 
-### Lo que tenemos desarrollado hasta ahora:
+## Lo que tenemos desarrollado hasta ahora:
+Infraestructura Base y Autenticación: Servidor completamente operativo, conexión estable con la base de datos PostgreSQL y sistema de autenticación basado en roles de Administrador y Empleado.
+##Módulo de Administración de Usuarios: Funcionalidad para registrar, listar, editar y gestionar usuarios del sistema, incluyendo perfiles y control de permisos.
+## Maquetación y Componentes UI: 
+Desarrollo de ventanas modales, paneles deslizables, menús interactivos y componentes reutilizables bajo la identidad visual deportiva de la marca.
+## Módulo de Inventario: 
+Gestión de productos, categorías, stock y movimientos básicos de almacén.
+## Módulo Financiero: 
+Implementación de indicadores y estadísticas para el control de costos, ganancias y valor del inventario.
+## Sistema de Kárdex:
+Registro histórico de entradas y salidas de productos, permitiendo el seguimiento detallado de cada movimiento.
+## Control de Flujo Monetario: 
+Seguimiento de ingresos y egresos relacionados con las operaciones del negocio.
+## Catálogo Público de Productos: 
+Visualización de productos para clientes externos con filtros y consulta de información detallada.
+## Carrito de Compras y Proceso de Venta:
+Flujo funcional para selección de productos y generación de pedidos.
+## Sincronización de Inventario: 
+Actualización automática del stock tras cada venta realizada dentro del sistema.
 
-* **Infraestructura Base y Autenticación:** Servidor operativo, conexión limpia a la base de datos y un sistema de control de acceso seguro basado en roles de Administrador y Empleado.
-* **Módulo de Administración de Usuarios:** Interfaz funcional que permite dar de alta, listar y gestionar al personal del negocio con sus respectivas credenciales y perfiles visuales.
-* **Maquetación y Kit de Componentes UI:** Estructuración de componentes visuales clave como ventanas modales, paneles deslizables, menús de comandos y herramientas de diseño bajo la línea estética deportiva de la marca.
+## Aspectos Pendientes de Optimización y Mejora:
 
-### Lo que está pendiente (Próxima Fase de Desarrollo):
+Aunque los módulos principales ya se encuentran desarrollados y operativos, aún existen procesos de optimización y ajustes para mejorar el rendimiento, la experiencia de usuario y la estabilidad general de la plataforma.
 
-El proyecto se encuentra en una etapa de transición donde se terminarán de pulir funciones críticas de la administración financiera y de almacén, para luego abrir el canal de venta digital. Los bloques a integrar son:
+## 1 Mejoras del Núcleo Administrativo:
+Optimización de reportes financieros y estadísticas en tiempo real.
+Mejoras en la visualización y consulta del historial Kárdex.
+Refinamiento de los procesos de control de inventario y validación de movimientos.
+Implementación de métricas más detalladas para análisis de ventas y rentabilidad.
+## 2 Mejoras del Módulo E-commerce:
+Optimización de la experiencia de navegación y búsqueda de productos.
+Mejoras en el proceso de compra y validación de pedidos.
+Integración de métodos de pago adicionales.
+Optimización del rendimiento y tiempos de respuesta del catálogo público.
+Fortalecimiento de la sincronización entre inventario y ventas para garantizar una mayor precisión operativa.
+Estado General del Proyecto
 
-#### 1. Optimización del Núcleo Administrativo (Finanzas y Almacén):
-* **Módulo Financiero Centralizado:** Empleo de contadores y tableros estadísticos que calculen automáticamente el valor total del inventario, los costos de las motocicletas, los márgenes de ganancia y el flujo de caja.
-* **Sistema de Kárdex:** Desarrollo de un registro histórico detallado por cada artículo, permitiendo rastrear cronológicamente el costo unitario, las cantidades y los motivos exactos de cada entrada y salida de mercancía.
-* **Historial de Flujo Monetario:** Control automatizado del dinero que ingresa y egresa del sistema ligado directamente a los movimientos físicos del inventario.
-
-#### 2. Expansión hacia el Cliente Final (E-commerce):
-* **Catálogo Público de Productos:** Sección abierta donde los usuarios externos puedan navegar, aplicar filtros avanzados por categorías y revisar especificaciones técnicas en tiempo real.
-* **Pasarela de Compras y Carrito:** Integración del flujo de selección de productos, carrito de compras y la lógica para que los clientes realicen pedidos y pagos de forma autónoma.
-* **Sincronización Automática de Stock:** Conectar la interfaz de compra del cliente con el inventario administrativo actual, asegurando que cada venta externa descuente de forma inmediata las existencias en la base de datos para evitar desajustes físicos.
-
+El proyecto se encuentra en una fase avanzada de desarrollo, con la mayoría de las funcionalidades principales implementadas y operativas. El trabajo actual está enfocado principalmente en optimizar procesos, corregir detalles menores, mejorar la experiencia de usuario y fortalecer la integración entre los distintos módulos para garantizar un sistema más eficiente, estable y preparado para su despliegue final
 
 > **Stack:** React.js + Node.js (Express) + PostgreSQL · Diseño "moderno y deportivo" en **verde esmeralda + negro**.
 
