@@ -8,7 +8,7 @@ Incluya sus datos básicos para identificación y control.
 - **Autor:** Narvaez Leon Jose Sebastian, Daniela Monserratte Pinto Bazante.
 - **Carrera:** Tecnologia De Desarrollo Software.
 - **Docente:** Jonathan Quespaz
-- **Período:** Ej. 2026-1
+- **Período:** 2026-1
 
 ## Estado Actual del Proyecto y Próximos Alcances
 
@@ -68,11 +68,12 @@ El proyecto se encuentra en una fase avanzada de desarrollo, con la mayoría de 
 └────────────────────────┘           └────────────────────────┘           └────────────┘
 ```
 
-**Estructura del backend (`backend/`)** 
+**Estructura del backend (`backend/`):**
 
 ```
 backend/
 ├── package.json
+├── package-lock.json
 ├── .env (NO se versiona — copiar de .env.example)
 ├── .env.example
 └── src/
@@ -96,7 +97,12 @@ backend/
         ├── products.js
         ├── movements.js          ← transacción atómica entrada/salida
         ├── dashboard.js          ← KPIs
-        └── reports.js
+        ├── reports.js
+        ├── finance.js            ← indicadores financieros y costos
+        ├── kardex.js             ← historial detallado de movimientos
+        ├── orders.js             ← gestión de pedidos de clientes
+        ├── customer.js           ← autenticación y datos de clientes
+        └── public.js             ← catálogo público sin autenticación
 ```
 
 **Estructura del frontend (`frontend/src/`):**
@@ -104,20 +110,36 @@ backend/
 ```
 src/
 ├── App.js                        ← rutas
+├── App.css
 ├── index.css                     ← tema oscuro + verde esmeralda
+├── index.js
 ├── lib/api.js                    ← axios con withCredentials
+├── assets/
+│   └── motonaations.png          ← logo de la marca
 ├── context/AuthContext.jsx       ← sesión global
 ├── components/
-│   ├── Layout.jsx                ← sidebar + outlet
-│   ├── ProtectedRoute.jsx
-│   └── ui-kit.jsx                ← Card, Badge, Buttons, Field
+│   ├── ui/                       ← componentes UI reutilizables
+│   ├── Avatar.jsx
+│   ├── BrandLogo.jsx
+│   └── Layout.jsx                ← sidebar + outlet
 └── pages/
-    ├── Login.jsx
-    ├── Dashboard.jsx             ← KPIs + movimientos + alertas
-    ├── Products.jsx              ← CRUD con filtros + modal
-    ├── Categories.jsx
-    ├── Movements.jsx             ← registro entrada/salida
+    ├── public/                   ← vistas para clientes externos
+    │   ├── Cart.jsx              ← carrito de compras
+    │   ├── Checkout.jsx          ← proceso de pago
+    │   ├── CustomerLogin.jsx     ← inicio de sesión de clientes
+    │   ├── CustomerRegister.jsx  ← registro de clientes
+    │   ├── Home.jsx              ← página de inicio pública
+    │   ├── MyOrders.jsx          ← historial de pedidos del cliente
+    │   ├── ProductDetail.jsx     ← detalle de producto
+    │   └── Shop.jsx              ← catálogo de productos
     ├── Alerts.jsx                ← productos bajo stock mínimo
+    ├── Categories.jsx
+    ├── Dashboard.jsx             ← KPIs + movimientos + alertas
+    ├── Finance.jsx               ← módulo financiero
+    ├── Kardex.jsx                ← historial de movimientos
+    ├── Login.jsx
+    ├── Movements.jsx             ← registro entrada/salida
+    ├── Products.jsx              ← CRUD con filtros + modal
     ├── Reports.jsx               ← gráficos Recharts
     └── Users.jsx                 ← admin only
 ```
@@ -126,24 +148,24 @@ src/
 
 ## 2. Tecnologías y Versiones
 
-| Capa     | Tecnología           | Versión       |
-|----------|----------------------|---------------|
-| Frontend | React                | 19            |
-|          | React Router DOM     | 7             |
-|          | Tailwind CSS         | 3.4           |
-|          | Recharts             | 3.6           |
-|          | Axios                | 1.8           |
-|          | Lucide-react (iconos)| 0.507         |
-| Backend  | Node.js              | 20 LTS        |
-|          | Express              | 4.21          |
-|          | pg (PostgreSQL)      | 8.13          |
-|          | jsonwebtoken         | 9.0           |
-|          | bcrypt               | 5.1           |
-|          | zod (validación)     | 3.23          |
-|          | cookie-parser        | 1.4           |
-|          | morgan (logging)     | 1.10          |
-| BD       | PostgreSQL           | 15            |
-| Otros    | npm / yarn           |               |
+| Capa     | Tecnología            | Versión  |
+|----------|-----------------------|----------|
+| Frontend | React                 | 19       |
+|          | React Router DOM      | 7        |
+|          | Tailwind CSS          | 3.4      |
+|          | Recharts              | 3.6      |
+|          | Axios                 | 1.8      |
+|          | Lucide-react (iconos) | 0.507    |
+| Backend  | Node.js               | 20 LTS   |
+|          | Express               | 4.21     |
+|          | pg (PostgreSQL)       | 8.13     |
+|          | jsonwebtoken          | 9.0      |
+|          | bcrypt                | 5.1      |
+|          | zod (validación)      | 3.23     |
+|          | cookie-parser         | 1.4      |
+|          | morgan (logging)      | 1.10     |
+| BD       | PostgreSQL            | 15       |
+| Otros    | npm / yarn            |          |
 
 ---
 
@@ -175,18 +197,15 @@ VS Code abrirá la carpeta del proyecto.
 
 **Opción A — pgAdmin (interfaz gráfica):**
 1. Abre **pgAdmin** y conéctate con tu usuario `postgres`.
-2. Crea un usuario nuevo: `motonation` con contraseña `motonation_pass`.
-3. Crea una base de datos `motonation_db` con propietario `motonation`.
+2. Crea una base de datos llamada `motonation-final` con propietario `postgres`.
 
 **Opción B — Terminal:**
 ```bash
 # Linux/Mac
-sudo -u postgres psql -c "CREATE USER motonation WITH PASSWORD 'motonation_pass';"
-sudo -u postgres psql -c "CREATE DATABASE motonation_db OWNER motonation;"
+sudo -u postgres psql -c "CREATE DATABASE \"motonation-final\";"
 
 # Windows (desde PowerShell, con psql en PATH)
-psql -U postgres -c "CREATE USER motonation WITH PASSWORD 'motonation_pass';"
-psql -U postgres -c "CREATE DATABASE motonation_db OWNER motonation;"
+psql -U postgres -c "CREATE DATABASE \"motonation-final\";"
 ```
 
 ### 4.3. Configurar variables de entorno del backend
@@ -198,19 +217,29 @@ cd backend
 cp .env.example .env
 ```
 
-Edita `backend/.env` y ajusta si tu PostgreSQL usa otro usuario/puerto:
+Edita `backend/.env` con la configuración de tu entorno local:
 
 ```env
+# CONFIGURACIÓN DEL SERVIDOR LOCAL
 PORT=5001
-DATABASE_URL=postgresql://motonation:motonation_pass@localhost:5432/motonation_db
-JWT_SECRET=cambia_este_token_a_uno_aleatorio_64_chars
-ADMIN_EMAIL=admin@motonation.com
-ADMIN_PASSWORD=Admin123!
-EMPLEADO_EMAIL=empleado@motonation.com
-EMPLEADO_PASSWORD=Empleado123!
+JWT_SECRET=motonation_secret_key_2026
+
+# CONEXIÓN A LA BASE DE DATOS LOCAL (pgAdmin)
+DB_USER=postgres
+DB_PASSWORD=root1253
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=motonation-final
+
+# CONFIGURACIÓN DE SEGURIDAD (CORS)
 ENABLE_CORS=true
 CORS_ORIGIN=http://localhost:3000
+
+# ENLACE DEL FRONTEND (Para tu API de desarrollo)
+REACT_APP_BACKEND_URL=http://localhost:5001
 ```
+
+> Ajusta `DB_PASSWORD` y demás valores según tu instalación local de PostgreSQL.
 
 > Para generar un JWT_SECRET seguro:
 > ```bash
@@ -226,11 +255,11 @@ npm install
 
 ### 4.5. Aplicar el esquema y datos iniciales
 
-El servidor lo hace automáticamente al arrancar (idempotente), pero también puedes ejecutarlos manualmente si dedea ;
+El servidor lo hace automáticamente al arrancar (idempotente), pero también puedes ejecutarlos manualmente:
 
 ```bash
 npm run migrate   # crea tablas e índices
-npm run seed      # admin + empleado + 6 categorías + 11 productos demo
+npm run seed      # admin + empleado + categorías + productos demo
 ```
 
 ### 4.6. Arrancar el backend
@@ -289,15 +318,17 @@ Abre <http://localhost:3000> en el navegador. Verás la pantalla de login.
 
 ## 5. Puertos utilizados
 
-| Servicio                 | Puerto |
-|--------------------------|--------|
-| Frontend (React)         | 3000   |
-| Backend (Node/Express)   | 5001   |
-| PostgreSQL               | 5432   |
+| Servicio               | Puerto |
+|------------------------|--------|
+| Frontend (React)       | 3000   |
+| Backend (Node/Express) | 5001   |
+| PostgreSQL             | 5432   |
 
 ---
 
 ## 6. Base de Datos
+
+**Nombre de la base de datos:** `motonation-final`
 
 **Tablas principales:**
 
@@ -307,37 +338,75 @@ Abre <http://localhost:3000> en el navegador. Verás la pantalla de login.
 | `categories`  | id, name (unique), description |
 | `products`    | id, sku (unique), name, type (motocicleta/accesorio), brand, model, category_id (FK), price, stock, min_stock, image_url |
 | `movements`   | id, product_id (FK CASCADE), product_name, product_sku, type (entrada/salida), quantity, reason, user_id, user_name, created_at |
+| `orders`      | id, customer_id (FK), total, status, created_at |
+| `order_items` | id, order_id (FK), product_id (FK), quantity, unit_price |
+| `customers`   | id (uuid), email (unique), name, password_hash (bcrypt), created_at |
 
 Ver `backend/src/db/schema.sql` para el DDL completo (incluye `CHECK` constraints, FKs, índices).
 
-**Seed inicial** (`backend/src/db/seed.js`): crea admin, empleado, 6 categorías (Deportivas, Naked, Touring, Cascos, Repuestos, Accesorios) y 11 productos de muestra. Es idempotente.
+**Seed inicial** (`backend/src/db/seed.js`): crea admin, empleado, categorías (Deportivas, Naked, Touring, Cascos, Repuestos, Accesorios) y productos de muestra. Es idempotente.
 
 ---
 
 ## 7. Endpoints (todos bajo `/api`)
 
-| Método | Ruta                          | Descripción                          | Rol      |
-|--------|-------------------------------|--------------------------------------|----------|
-| POST   | `/api/auth/login`             | Iniciar sesión                       | público  |
-| POST   | `/api/auth/logout`            | Cerrar sesión                        | autent.  |
-| GET    | `/api/auth/me`                | Datos del usuario actual             | autent.  |
-| POST   | `/api/auth/refresh`           | Renovar access token                 | autent.  |
-| GET    | `/api/products`               | Listar productos (con filtros)       | autent.  |
-| POST   | `/api/products`               | Crear producto                       | admin    |
-| PUT    | `/api/products/:id`           | Actualizar producto                  | admin    |
-| DELETE | `/api/products/:id`           | Eliminar producto                    | admin    |
-| GET    | `/api/categories`             | Listar categorías                    | autent.  |
-| POST   | `/api/categories`             | Crear categoría                      | admin    |
-| DELETE | `/api/categories/:id`         | Eliminar categoría                   | admin    |
-| GET    | `/api/movements`              | Listar movimientos                   | autent.  |
-| POST   | `/api/movements`              | Registrar movimiento (transacción)   | autent.  |
-| GET    | `/api/dashboard/stats`        | KPIs globales                        | autent.  |
-| GET    | `/api/dashboard/low-stock`    | Productos bajo stock mínimo          | autent.  |
-| GET    | `/api/reports/stock-by-category`         | Stock y valor por categoría | autent.  |
-| GET    | `/api/reports/movements-summary?days=7`  | Movimientos por día         | autent.  |
-| GET    | `/api/users`                  | Listar usuarios                      | admin    |
-| POST   | `/api/users`                  | Crear usuario                        | admin    |
-| DELETE | `/api/users/:id`              | Eliminar usuario                     | admin    |
+### Autenticación
+
+| Método | Ruta                 | Descripción                  | Rol      |
+|--------|----------------------|------------------------------|----------|
+| POST   | `/api/auth/login`    | Iniciar sesión               | público  |
+| POST   | `/api/auth/logout`   | Cerrar sesión                | autent.  |
+| GET    | `/api/auth/me`       | Datos del usuario actual     | autent.  |
+| POST   | `/api/auth/refresh`  | Renovar access token         | autent.  |
+
+### Productos y Categorías
+
+| Método | Ruta                        | Descripción                        | Rol     |
+|--------|-----------------------------|------------------------------------|---------|
+| GET    | `/api/products`             | Listar productos (con filtros)     | autent. |
+| POST   | `/api/products`             | Crear producto                     | admin   |
+| PUT    | `/api/products/:id`         | Actualizar producto                | admin   |
+| DELETE | `/api/products/:id`         | Eliminar producto                  | admin   |
+| GET    | `/api/categories`           | Listar categorías                  | autent. |
+| POST   | `/api/categories`           | Crear categoría                    | admin   |
+| DELETE | `/api/categories/:id`       | Eliminar categoría                 | admin   |
+
+### Movimientos y Kárdex
+
+| Método | Ruta                        | Descripción                          | Rol     |
+|--------|-----------------------------|--------------------------------------|---------|
+| GET    | `/api/movements`            | Listar movimientos                   | autent. |
+| POST   | `/api/movements`            | Registrar movimiento (transacción)   | autent. |
+| GET    | `/api/kardex`               | Historial kárdex por producto        | autent. |
+
+### Dashboard, Reportes y Finanzas
+
+| Método | Ruta                                       | Descripción                    | Rol     |
+|--------|--------------------------------------------|--------------------------------|---------|
+| GET    | `/api/dashboard/stats`                     | KPIs globales                  | autent. |
+| GET    | `/api/dashboard/low-stock`                 | Productos bajo stock mínimo    | autent. |
+| GET    | `/api/reports/stock-by-category`           | Stock y valor por categoría    | autent. |
+| GET    | `/api/reports/movements-summary?days=7`    | Movimientos por día            | autent. |
+| GET    | `/api/finance`                             | Indicadores financieros        | autent. |
+
+### Usuarios (Admin)
+
+| Método | Ruta                  | Descripción         | Rol   |
+|--------|-----------------------|---------------------|-------|
+| GET    | `/api/users`          | Listar usuarios     | admin |
+| POST   | `/api/users`          | Crear usuario       | admin |
+| DELETE | `/api/users/:id`      | Eliminar usuario    | admin |
+
+### E-commerce (Clientes)
+
+| Método | Ruta                          | Descripción                           | Rol      |
+|--------|-------------------------------|---------------------------------------|----------|
+| GET    | `/api/public/products`        | Catálogo público de productos         | público  |
+| GET    | `/api/public/products/:id`    | Detalle de producto público           | público  |
+| POST   | `/api/customer/register`      | Registro de cliente                   | público  |
+| POST   | `/api/customer/login`         | Login de cliente                      | público  |
+| GET    | `/api/orders`                 | Listar pedidos del cliente            | cliente  |
+| POST   | `/api/orders`                 | Crear pedido (checkout)               | cliente  |
 
 **Filtros disponibles en `/api/products`:**
 - `?q=texto` — busca en nombre, SKU, marca, modelo (ILIKE)
@@ -370,17 +439,21 @@ curl -b cookies.txt $API/api/products | head
 1. **Login** con credenciales válidas → redirección a `/dashboard`.
 2. **Crear producto** (admin) → aparece en la tabla.
 3. **Registrar salida** con cantidad mayor al stock actual → debe rechazarse con `400 Stock insuficiente para salida`.
-4. **Registrar entrada/salida** → el stock se actualiza y aparece en `Movimientos`.
+4. **Registrar entrada/salida** → el stock se actualiza y aparece en `Movimientos` y `Kárdex`.
 5. **Bajar stock por debajo de `min_stock`** → el producto aparece en `Alertas` (tarjeta ámbar).
-6. **Cerrar sesión** → redirección a `/login`.
-7. **Login como empleado** → el menú `Usuarios` NO aparece (control de rol).
-8. **Crear categoría con productos** → no se puede eliminar (FK protegida).
+6. **Consultar Finance** → los indicadores reflejan los movimientos registrados.
+7. **Cerrar sesión** → redirección a `/login`.
+8. **Login como empleado** → el menú `Usuarios` NO aparece (control de rol).
+9. **Crear categoría con productos** → no se puede eliminar (FK protegida).
+10. **Registrar un cliente** en la tienda pública → puede iniciar sesión y ver sus pedidos en `MyOrders`.
+11. **Agregar productos al carrito** y completar el Checkout → el stock se descuenta automáticamente.
 
 ---
 
 ## 9. Datos / Archivos Adicionales
 
 - Las imágenes de productos se referencian por URL (Unsplash) — no se almacenan binarios.
+- El logo de la marca se encuentra en `frontend/public/motonaations.png` y `frontend/src/assets/motonaations.png`.
 - El seed completo está en `backend/src/db/seed.js`.
 - No se requieren archivos adicionales externos.
 
@@ -390,7 +463,7 @@ curl -b cookies.txt $API/api/products | head
 
 - Configurar `CORS_ORIGIN` con el dominio del frontend (no `*`).
 - Las cookies usan `SameSite=None; Secure=true`, requieren **HTTPS**.
-- Cambiar `JWT_SECRET`, `ADMIN_EMAIL` y `ADMIN_PASSWORD` antes de exponer.
+- Cambiar `JWT_SECRET`, credenciales de admin y contraseña de base de datos antes de exponer.
 - Usar `npm start` (no `dev`).
 - Considerar PM2 o systemd para mantener el proceso vivo.
 
@@ -413,7 +486,7 @@ yarn install
 yarn start
 
 # PostgreSQL — entrar al CLI
-psql -U motonation -d motonation_db
+psql -U postgres -d motonation-final
 \dt                      # listar tablas
 SELECT * FROM products LIMIT 5;
 \q                       # salir
@@ -422,5 +495,4 @@ SELECT * FROM products LIMIT 5;
 ---
 
 ## Autor
-Narvaez Jose - Monse Pinto 
-
+Narvaez Jose - Monse Pinto
