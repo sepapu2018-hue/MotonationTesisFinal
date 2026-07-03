@@ -7,9 +7,11 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   role          TEXT NOT NULL CHECK (role IN ('admin', 'empleado')),
   avatar_url    TEXT NOT NULL DEFAULT '',
+  permissions   JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT NOT NULL DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSONB NOT NULL DEFAULT '[]'::jsonb;
 
 CREATE TABLE IF NOT EXISTS categories (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -111,3 +113,24 @@ CREATE TABLE IF NOT EXISTS order_items (
 );
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items(product_id);
+
+CREATE TABLE IF NOT EXISTS password_resets (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  token_hash  TEXT NOT NULL UNIQUE,
+  expires_at  TIMESTAMPTZ NOT NULL,
+  used_at     TIMESTAMPTZ,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_password_resets_customer ON password_resets(customer_id);
+
+CREATE TABLE IF NOT EXISTS reviews (
+  id           SERIAL PRIMARY KEY,
+  name         VARCHAR(120) NOT NULL,
+  city         VARCHAR(120) NOT NULL,
+  rating       SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  text         TEXT NOT NULL,
+  is_published BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at   TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_reviews_published ON reviews(is_published);
