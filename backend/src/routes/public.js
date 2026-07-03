@@ -100,6 +100,9 @@ router.get('/featured', asyncHandler(async (req, res) => {
   })));
 }));
 
+// Solo se muestran (y se conservan) las reseñas más recientes
+const MAX_REVIEWS = 3;
+
 // 5. OBTENER RESEÑAS PUBLICADAS (más recientes primero)
 router.get('/reviews', asyncHandler(async (req, res) => {
   const rows = await query(`
@@ -113,8 +116,8 @@ router.get('/reviews', asyncHandler(async (req, res) => {
     FROM reviews
     WHERE is_published = true
     ORDER BY created_at DESC
-    LIMIT 50
-  `);
+    LIMIT $1
+  `, [MAX_REVIEWS]);
 
   res.json(rows);
 }));
@@ -159,6 +162,14 @@ router.post('/reviews', asyncHandler(async (req, res) => {
       ratingNum,
       String(text).trim()
     ]
+  );
+
+  // Solo se conservan las MAX_REVIEWS más recientes: al agregar una nueva, se borran las más antiguas
+  await query(
+    `DELETE FROM reviews WHERE id IN (
+       SELECT id FROM reviews ORDER BY created_at DESC OFFSET $1
+     )`,
+    [MAX_REVIEWS]
   );
 
   res.status(201).json(row);

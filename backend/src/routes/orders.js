@@ -5,6 +5,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const { pool, query, one } = require('../config/db');
 const { customerRequired, authRequired } = require('../middleware/auth');
 const { httpError } = require('../middleware/errorHandler');
+const { computeOrderTotals, generateOrderNumber } = require('../utils/pricing');
 
 const router = express.Router();
 
@@ -16,12 +17,6 @@ const checkoutSchema = z.object({
   shipping_address: z.string().min(5),
   notes: z.string().optional().default(''),
 });
-
-function generateOrderNumber() {
-  const ts = Date.now().toString().slice(-8);
-  const rand = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  return `MN-${ts}${rand}`;
-}
 
 // POST /api/orders/checkout — checkout simulado (descuenta stock + crea pedido + movimientos)
 router.post('/checkout', customerRequired, asyncHandler(async (req, res) => {
@@ -44,25 +39,18 @@ router.post('/checkout', customerRequired, asyncHandler(async (req, res) => {
     }
 
     const byId = Object.fromEntries(prodRes.rows.map((p) => [p.id, p]));
-    let subtotal = 0;
 
-    // Validación estricta de stock y cálculo de subtotal con redondeo financiero parcial
+    // Validación estricta de stock disponible
     for (const it of data.items) {
       const p = byId[it.product_id];
       if (p.stock < it.quantity) {
         throw httpError(400, `Stock insuficiente para "${p.name}" (disponible: ${p.stock})`);
       }
-      const itemPrice = Number(p.price);
-      const partialSubtotal = Number((itemPrice * it.quantity).toFixed(2));
-      subtotal += partialSubtotal;
     }
-    
-    subtotal = Number(subtotal.toFixed(2));
 
-    // Tasa de IVA oficial del 15% (Ecuador)
-    const taxRate = 0.15;
-    const tax = Number((subtotal * taxRate).toFixed(2));
-    const total = Number((subtotal + tax).toFixed(2));
+    const { subtotal, tax, total } = computeOrderTotals(
+      data.items.map((it) => ({ price: byId[it.product_id].price, quantity: it.quantity }))
+    );
     const orderNumber = generateOrderNumber();
     const paymentRef = 'SIM-' + Math.random().toString(36).slice(2, 10).toUpperCase();
 
@@ -154,6 +142,53 @@ router.get('/mine/:id', customerRequired, asyncHandler(async (req, res) => {
       subtotal: Number(i.subtotal),
     })),
   });
+}));
+
+// Cliente: cancela su propio pedido mientras no haya sido enviado (repone stock)
+router.put('/mine/:id/cancel', customerRequired, asyncHandler(async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const orderRes = await client.query(
+      'SELECT * FROM orders WHERE id = $1 AND customer_id = $2 FOR UPDATE',
+      [req.params.id, req.customer.id]
+    );
+    const order = orderRes.rows[0];
+    if (!order) throw httpError(404, 'Pedido no encontrado');
+    if (!['pendiente', 'pagado'].includes(order.status)) {
+      throw httpError(400, 'Este pedido ya no se puede cancelar');
+    }
+
+    const items = (await client.query('SELECT * FROM order_items WHERE order_id = $1', [order.id])).rows;
+    for (const it of items) {
+      await client.query(
+        'UPDATE products SET stock = stock + $1, updated_at = NOW() WHERE id = $2',
+        [it.quantity, it.product_id]
+      );
+      await client.query(
+        `INSERT INTO movements
+          (product_id, product_name, product_sku, type, quantity, unit_cost, unit_price,
+           reason, user_id, user_name, order_id)
+         VALUES ($1,$2,$3,'entrada',$4,$5,$6,$7,NULL,$8,$9)`,
+        [it.product_id, it.product_name, it.product_sku, it.quantity, Number(it.unit_cost), Number(it.unit_price),
+         `Cancelación de pedido ${order.order_number}`, req.customer.name, order.id]
+      );
+    }
+
+    const updated = await client.query(
+      "UPDATE orders SET status = 'cancelado', updated_at = NOW() WHERE id = $1 RETURNING *",
+      [order.id]
+    );
+
+    await client.query('COMMIT');
+    res.json({ ok: true, status: updated.rows[0].status });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
 }));
 
 // Admin: listado de todos los pedidos

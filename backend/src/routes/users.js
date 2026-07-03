@@ -19,6 +19,19 @@ const userSchema = z.object({
   avatar_url: z.string().default(''),
 });
 
+// Edición de usuario: la contraseña es opcional (si se omite, se conserva la actual)
+const userEditSchema = z.object({
+  email: z.string().email().trim(),
+  name: z.string().min(1).trim(),
+  role: z.enum(['admin', 'empleado']),
+  permissions: z.array(z.string()).default([]),
+  password: z.union([z.string().min(6), z.literal('')]).optional(),
+});
+
+const avatarSchema = z.object({
+  avatar_url: z.string(),
+});
+
 // RUTA GET /api/users
 router.get('/', asyncHandler(async (req, res) => {
   const users = await query(
@@ -51,11 +64,70 @@ router.post('/', asyncHandler(async (req, res) => {
   res.status(201).json(user);
 }));
 
+// RUTA PUT /api/users/:id — edición completa (datos, rol, permisos y opcionalmente contraseña)
+router.put('/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const data = userEditSchema.parse(req.body);
+  const email = data.email.toLowerCase();
+
+  const target = await one('SELECT id, role FROM users WHERE id = $1', [id]);
+  if (!target) throw httpError(404, 'Usuario no encontrado');
+
+  const emailTaken = await one('SELECT id FROM users WHERE email = $1 AND id <> $2', [email, id]);
+  if (emailTaken) throw httpError(400, 'El correo ya está en uso por otro usuario');
+
+  // Protege el sistema de quedarse sin administradores
+  if (target.role === 'admin' && data.role !== 'admin') {
+    const admins = await one("SELECT COUNT(*)::int AS c FROM users WHERE role = 'admin'");
+    if (admins.c <= 1) throw httpError(400, 'No puedes quitar el rol de administrador al único admin del sistema');
+  }
+
+  let user;
+  if (data.password) {
+    const hash = await bcrypt.hash(data.password, 10);
+    user = await one(
+      `UPDATE users SET email=$1, name=$2, role=$3, permissions=$4, password_hash=$5
+       WHERE id = $6 RETURNING id, email, name, role, avatar_url, permissions, created_at`,
+      [email, data.name, data.role, JSON.stringify(data.permissions || []), hash, id]
+    );
+  } else {
+    user = await one(
+      `UPDATE users SET email=$1, name=$2, role=$3, permissions=$4
+       WHERE id = $5 RETURNING id, email, name, role, avatar_url, permissions, created_at`,
+      [email, data.name, data.role, JSON.stringify(data.permissions || []), id]
+    );
+  }
+
+  res.json(user);
+}));
+
+// RUTA PATCH /api/users/:id — actualización parcial (foto de perfil)
+router.patch('/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const data = avatarSchema.parse(req.body);
+
+  const user = await one(
+    'UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING id, email, name, role, avatar_url, permissions, created_at',
+    [data.avatar_url, id]
+  );
+  if (!user) throw httpError(404, 'Usuario no encontrado');
+  res.json(user);
+}));
+
 // RUTA DELETE /api/users/:id
 router.delete('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const user = await one('SELECT id FROM users WHERE id = $1', [id]);
+
+  if (id === req.user.id) throw httpError(400, 'No puedes eliminar tu propia cuenta');
+
+  const user = await one('SELECT id, role FROM users WHERE id = $1', [id]);
   if (!user) throw httpError(404, 'Usuario no encontrado');
+
+  if (user.role === 'admin') {
+    const admins = await one("SELECT COUNT(*)::int AS c FROM users WHERE role = 'admin'");
+    if (admins.c <= 1) throw httpError(400, 'No puedes eliminar al único administrador del sistema');
+  }
+
   await query('DELETE FROM users WHERE id = $1', [id]);
   res.json({ ok: true });
 }));
