@@ -1,6 +1,6 @@
 # MotoNation — Sistema Web de Control de Inventarios
 
-Aplicación full-stack que automatiza el registro de stock en tiempo real y la gestión operativa de motocicletas. Incluye alertas de niveles críticos de inventario, reportes analíticos y un control de acceso seguro basado en roles de usuario.
+Aplicación full-stack que automatiza el registro de stock en tiempo real y la gestión operativa de motocicletas. Incluye alertas de niveles críticos de inventario, kárdex, gestión de pedidos, moderación de reseñas y un control de acceso seguro basado en roles y permisos de usuario.
 
 Incluya sus datos básicos para identificación y control.
 
@@ -15,43 +15,39 @@ Incluya sus datos básicos para identificación y control.
 Hasta la fecha, el desarrollo de la plataforma ha avanzado significativamente, consolidando tanto la infraestructura principal como gran parte de los módulos administrativos y comerciales. Actualmente, el sistema cuenta con una base sólida y funcional que permite gestionar las operaciones internas del negocio de manera eficiente, manteniendo una arquitectura escalable para futuras mejoras.
 
 ## Lo que tenemos desarrollado hasta ahora:
-Infraestructura Base y Autenticación: Servidor completamente operativo, conexión estable con la base de datos PostgreSQL y sistema de autenticación basado en roles de Administrador y Empleado.
-##Módulo de Administración de Usuarios: Funcionalidad para registrar, listar, editar y gestionar usuarios del sistema, incluyendo perfiles y control de permisos.
-## Maquetación y Componentes UI: 
-Desarrollo de ventanas modales, paneles deslizables, menús interactivos y componentes reutilizables bajo la identidad visual deportiva de la marca.
-## Módulo de Inventario: 
-Gestión de productos, categorías, stock y movimientos básicos de almacén.
-## Módulo Financiero: 
-Implementación de indicadores y estadísticas para el control de costos, ganancias y valor del inventario.
-## Sistema de Kárdex:
-Registro histórico de entradas y salidas de productos, permitiendo el seguimiento detallado de cada movimiento.
-## Control de Flujo Monetario: 
-Seguimiento de ingresos y egresos relacionados con las operaciones del negocio.
-## Catálogo Público de Productos: 
-Visualización de productos para clientes externos con filtros y consulta de información detallada.
-## Carrito de Compras y Proceso de Venta:
-Flujo funcional para selección de productos y generación de pedidos.
-## Sincronización de Inventario: 
-Actualización automática del stock tras cada venta realizada dentro del sistema.
+
+- **Infraestructura Base y Autenticación:** Servidor completamente operativo, conexión estable con la base de datos PostgreSQL y sistema de autenticación basado en roles de Administrador y Empleado, con tokens de acceso y refresco (JWT), protección anti fuerza bruta en los login y cabeceras de seguridad HTTP (helmet).
+- **Módulo de Administración de Usuarios:** Registro, listado, edición (nombre, correo, rol, permisos granulares y contraseña) y eliminación de usuarios del sistema, con protecciones para no quedarse sin administradores ni auto-eliminarse. Permisos configurables por usuario (Dashboard, Productos, Categorías, Reseñas, Ventas/Movimientos, Kárdex, Pedidos, Alertas).
+- **Maquetación y Componentes UI:** Ventanas modales, paneles deslizables, menús interactivos, diálogos de confirmación reutilizables y componentes bajo la identidad visual deportiva de la marca (verde esmeralda + negro).
+- **Módulo de Inventario:** Gestión de productos, categorías, stock y movimientos de almacén (entradas, salidas y ventas).
+- **Sistema de Kárdex:** Registro histórico de entradas/salidas/ventas por producto, con exportación a PDF.
+- **Alertas de Stock:** Panel dedicado a productos por debajo del stock mínimo configurado.
+- **Catálogo Público de Productos:** Visualización de productos para clientes externos con filtros, búsqueda y detalle por SKU.
+- **Cuenta de Cliente:** Registro, login, edición de perfil y recuperación de contraseña ("olvidé mi contraseña" con token de un solo uso).
+- **Carrito de Compras y Checkout:** Flujo funcional para selección de productos, checkout simulado y generación de pedidos con cálculo de impuestos.
+- **Gestión de Pedidos (Admin):** Listado y detalle de todos los pedidos, cambio de estado (pendiente → pagado → enviado → entregado / cancelado). El cliente puede ver y cancelar sus propios pedidos (repone stock automáticamente).
+- **Reseñas de Clientes:** Los visitantes pueden dejar una reseña pública desde la Home; el panel admin permite moderarlas (listar/eliminar).
+- **Sincronización de Inventario:** Actualización automática del stock tras cada venta o cancelación de pedido, con trazabilidad en Kárdex/Movimientos.
+- **Pruebas Automatizadas:** Suite de tests con Jest en el backend (utilidades de precios y tokens) y tests unitarios de permisos en el frontend.
 
 ## Aspectos Pendientes de Optimización y Mejora:
 
 Aunque los módulos principales ya se encuentran desarrollados y operativos, aún existen procesos de optimización y ajustes para mejorar el rendimiento, la experiencia de usuario y la estabilidad general de la plataforma.
 
-## 1 Mejoras del Núcleo Administrativo:
-Optimización de reportes financieros y estadísticas en tiempo real.
-Mejoras en la visualización y consulta del historial Kárdex.
-Refinamiento de los procesos de control de inventario y validación de movimientos.
-Implementación de métricas más detalladas para análisis de ventas y rentabilidad.
-## 2 Mejoras del Módulo E-commerce:
-Optimización de la experiencia de navegación y búsqueda de productos.
-Mejoras en el proceso de compra y validación de pedidos.
-Integración de métodos de pago adicionales.
-Optimización del rendimiento y tiempos de respuesta del catálogo público.
-Fortalecimiento de la sincronización entre inventario y ventas para garantizar una mayor precisión operativa.
-Estado General del Proyecto
+### 1. Mejoras del Núcleo Administrativo:
+- Mejoras en la visualización y consulta del historial Kárdex.
+- Refinamiento de los procesos de control de inventario y validación de movimientos.
+- Ampliar la cobertura de pruebas automatizadas (backend y frontend).
 
-El proyecto se encuentra en una fase avanzada de desarrollo, con la mayoría de las funcionalidades principales implementadas y operativas. El trabajo actual está enfocado principalmente en optimizar procesos, corregir detalles menores, mejorar la experiencia de usuario y fortalecer la integración entre los distintos módulos para garantizar un sistema más eficiente, estable y preparado para su despliegue final
+### 2. Mejoras del Módulo E-commerce:
+- Optimización de la experiencia de navegación y búsqueda de productos.
+- Integración de métodos de pago adicionales (el checkout actual es simulado).
+- Optimización del rendimiento y tiempos de respuesta del catálogo público.
+- Envío real de correos para la recuperación de contraseña (actualmente el token se devuelve en la respuesta de desarrollo, no hay proveedor de email configurado).
+
+## Estado General del Proyecto
+
+El proyecto se encuentra en una fase avanzada de desarrollo, con la mayoría de las funcionalidades principales implementadas y operativas. El trabajo actual está enfocado principalmente en optimizar procesos, corregir detalles menores, mejorar la experiencia de usuario y fortalecer la integración entre los distintos módulos para garantizar un sistema más eficiente, estable y preparado para su despliegue final.
 
 > **Stack:** React.js + Node.js (Express) + PostgreSQL · Diseño "moderno y deportivo" en **verde esmeralda + negro**.
 
@@ -76,33 +72,36 @@ backend/
 ├── package-lock.json
 ├── .env (NO se versiona — copiar de .env.example)
 ├── .env.example
+├── tests/
+│   ├── pricing.test.js       ← cálculo de totales y número de orden
+│   └── tokens.test.js        ← firma/verificación de JWT
 └── src/
     ├── index.js                  ← punto de entrada Express
     ├── config/
     │   └── db.js                 ← pool de PostgreSQL
     ├── middleware/
-    │   ├── auth.js               ← JWT + roles (authRequired, adminRequired)
+    │   ├── auth.js               ← JWT + roles (authRequired, adminRequired, customerRequired)
     │   └── errorHandler.js       ← manejador centralizado de errores
     ├── utils/
     │   ├── tokens.js             ← sign/verify JWT, cookies httpOnly
-    │   └── asyncHandler.js       ← wrapper para handlers async
+    │   ├── asyncHandler.js       ← wrapper para handlers async
+    │   └── pricing.js            ← cálculo de subtotal/impuesto/total y número de orden
     ├── db/
     │   ├── schema.sql            ← DDL (tablas, índices, constraints)
     │   ├── migrate.js            ← aplica el schema
     │   └── seed.js               ← carga inicial idempotente
     └── routes/
-        ├── auth.js               ← login, logout, me, refresh
-        ├── users.js              ← gestión de usuarios (admin)
+        ├── auth.js               ← login, logout, me, refresh (staff)
+        ├── users.js               ← gestión de usuarios (admin)
         ├── categories.js
         ├── products.js
         ├── movements.js          ← transacción atómica entrada/salida
         ├── dashboard.js          ← KPIs
-        ├── reports.js
-        ├── finance.js            ← indicadores financieros y costos
-        ├── kardex.js             ← historial detallado de movimientos
-        ├── orders.js             ← gestión de pedidos de clientes
-        ├── customer.js           ← autenticación y datos de clientes
-        └── public.js             ← catálogo público sin autenticación
+        ├── kardex.js              ← historial detallado de movimientos
+        ├── orders.js              ← checkout, pedidos del cliente y gestión admin
+        ├── customer.js            ← autenticación, perfil y recuperación de contraseña de clientes
+        ├── reviews.js             ← moderación de reseñas (admin)
+        └── public.js               ← catálogo, categorías, destacados y reseñas públicas (sin autenticación)
 ```
 
 **Estructura del frontend (`frontend/src/`):**
@@ -113,34 +112,46 @@ src/
 ├── App.css
 ├── index.css                     ← tema oscuro + verde esmeralda
 ├── index.js
-├── lib/api.js                    ← axios con withCredentials
+├── lib/
+│   ├── api.js                    ← axios con withCredentials
+│   ├── utils.js
+│   ├── permissions.js            ← lógica de permisos por usuario/rol
+│   └── permissions.test.js       ← tests unitarios de permisos
 ├── assets/
 │   └── motonaations.png          ← logo de la marca
-├── context/AuthContext.jsx       ← sesión global
+├── context/
+│   ├── AuthContext.jsx           ← sesión global de staff
+│   ├── CustomerContext.jsx       ← sesión global de clientes
+│   └── CartContext.jsx           ← carrito de compras
 ├── components/
 │   ├── ui/                       ← componentes UI reutilizables
+│   ├── ConfirmDialog.jsx         ← diálogo de confirmación reutilizable
 │   ├── Avatar.jsx
 │   ├── BrandLogo.jsx
-│   └── Layout.jsx                ← sidebar + outlet
+│   ├── Layout.jsx                ← header/nav del panel admin + outlet
+│   └── PublicLayout.jsx          ← header/footer de la tienda pública
 └── pages/
     ├── public/                   ← vistas para clientes externos
     │   ├── Cart.jsx              ← carrito de compras
     │   ├── Checkout.jsx          ← proceso de pago
     │   ├── CustomerLogin.jsx     ← inicio de sesión de clientes
     │   ├── CustomerRegister.jsx  ← registro de clientes
-    │   ├── Home.jsx              ← página de inicio pública
+    │   ├── ForgotPassword.jsx    ← solicitud de recuperación de contraseña
+    │   ├── ResetPassword.jsx     ← restablecer contraseña con token
+    │   ├── Account.jsx           ← perfil del cliente
+    │   ├── Home.jsx              ← página de inicio pública (destacados + reseñas)
     │   ├── MyOrders.jsx          ← historial de pedidos del cliente
     │   ├── ProductDetail.jsx     ← detalle de producto
     │   └── Shop.jsx              ← catálogo de productos
     ├── Alerts.jsx                ← productos bajo stock mínimo
     ├── Categories.jsx
     ├── Dashboard.jsx             ← KPIs + movimientos + alertas
-    ├── Finance.jsx               ← módulo financiero
-    ├── Kardex.jsx                ← historial de movimientos
+    ├── Kardex.jsx                ← historial de movimientos + export PDF
     ├── Login.jsx
     ├── Movements.jsx             ← registro entrada/salida
+    ├── Orders.jsx                ← gestión de pedidos (admin)
     ├── Products.jsx              ← CRUD con filtros + modal
-    ├── Reports.jsx               ← gráficos Recharts
+    ├── Reviews.jsx                ← moderación de reseñas (admin)
     └── Users.jsx                 ← admin only
 ```
 
@@ -155,6 +166,7 @@ src/
 |          | Tailwind CSS          | 3.4      |
 |          | Recharts              | 3.6      |
 |          | Axios                 | 1.8      |
+|          | jsPDF + autotable      | 4.2 / 5.0 |
 |          | Lucide-react (iconos) | 0.507    |
 | Backend  | Node.js               | 20 LTS   |
 |          | Express               | 4.21     |
@@ -164,6 +176,8 @@ src/
 |          | zod (validación)      | 3.23     |
 |          | cookie-parser         | 1.4      |
 |          | morgan (logging)      | 1.10     |
+|          | express-rate-limit    | 8.5      |
+|          | jest (tests)          | 30.4     |
 | BD       | PostgreSQL            | 15       |
 | Otros    | npm / yarn            |          |
 
@@ -222,11 +236,11 @@ Edita `backend/.env` con la configuración de tu entorno local:
 ```env
 # CONFIGURACIÓN DEL SERVIDOR LOCAL
 PORT=5001
-JWT_SECRET=motonation_secret_key_2026
+JWT_SECRET=cambia_esto_por_un_valor_aleatorio_y_seguro
 
 # CONEXIÓN A LA BASE DE DATOS LOCAL (pgAdmin)
 DB_USER=postgres
-DB_PASSWORD=root1253
+DB_PASSWORD=tu_password_local
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=motonation-final
@@ -290,9 +304,10 @@ Abre otra terminal (`Terminal → New Terminal`) y:
 
 ```bash
 cd ../frontend
+cp .env.example .env
 ```
 
-Crea `frontend/.env` con:
+`frontend/.env` queda así:
 
 ```env
 REACT_APP_BACKEND_URL=http://localhost:5001
@@ -305,14 +320,17 @@ yarn install      # o `npm install`
 yarn start        # o `npm start`
 ```
 
-Abre <http://localhost:3000> en el navegador. Verás la pantalla de login.
+Abre <http://localhost:3000> en el navegador. Verás la tienda pública; el panel administrativo está en `/admin/login`.
 
 ### 4.9. Iniciar sesión
 
 | Rol      | Email                     | Contraseña     |
 |----------|---------------------------|----------------|
-| Admin    | admin@motonation.com      | `Admin123!`    |
-| Empleado | empleado@motonation.com   | `Empleado123!` |
+| Admin    | admin@motonation.com      | `admin123`     |
+| Empleado | empleado@motonation.com   | `empleado123`  |
+| Cliente (tienda) | cliente@demo.com  | `Cliente123!`  |
+
+> Estas son las cuentas de demostración creadas por `backend/src/db/seed.js`. Cámbialas (o crea las tuyas desde **Usuarios**) antes de usar el sistema en un entorno real.
 
 ---
 
@@ -332,15 +350,17 @@ Abre <http://localhost:3000> en el navegador. Verás la pantalla de login.
 
 **Tablas principales:**
 
-| Tabla         | Campos clave |
-|---------------|--------------|
-| `users`       | id (uuid), email (unique), name, password_hash (bcrypt), role (admin/empleado), created_at |
-| `categories`  | id, name (unique), description |
-| `products`    | id, sku (unique), name, type (motocicleta/accesorio), brand, model, category_id (FK), price, stock, min_stock, image_url |
-| `movements`   | id, product_id (FK CASCADE), product_name, product_sku, type (entrada/salida), quantity, reason, user_id, user_name, created_at |
-| `orders`      | id, customer_id (FK), total, status, created_at |
-| `order_items` | id, order_id (FK), product_id (FK), quantity, unit_price |
-| `customers`   | id (uuid), email (unique), name, password_hash (bcrypt), created_at |
+| Tabla             | Campos clave |
+|-------------------|--------------|
+| `users`           | id (uuid), email (unique), name, password_hash (bcrypt), role (admin/empleado), avatar_url, permissions (jsonb), created_at |
+| `categories`      | id, name (unique), description |
+| `products`        | id, sku (unique), name, type (motocicleta/accesorio), brand, model, category_id (FK), cost, price, stock, min_stock, image_url, is_published |
+| `movements`       | id, product_id (FK CASCADE), product_name, product_sku, type (entrada/salida/venta), quantity, unit_cost, unit_price, reason, user_id, user_name, order_id, created_at |
+| `orders`          | id, order_number (unique), customer_id (FK), subtotal, tax, total, status, payment_method, created_at |
+| `order_items`     | id, order_id (FK), product_id (FK), quantity, unit_cost, unit_price, subtotal |
+| `customers`        | id (uuid), email (unique), name, phone, address, city, password_hash (bcrypt), created_at |
+| `password_resets` | id, customer_id (FK CASCADE), token_hash (hash SHA-256, unique), expires_at, used_at — tokens de recuperación de contraseña |
+| `reviews`          | id, name, city, rating (1-5), text, is_published, created_at — reseñas públicas de la tienda (se conservan solo las 3 más recientes) |
 
 Ver `backend/src/db/schema.sql` para el DDL completo (incluye `CHECK` constraints, FKs, índices).
 
@@ -350,19 +370,19 @@ Ver `backend/src/db/schema.sql` para el DDL completo (incluye `CHECK` constraint
 
 ## 7. Endpoints (todos bajo `/api`)
 
-### Autenticación
+### Autenticación (Staff)
 
 | Método | Ruta                 | Descripción                  | Rol      |
-|--------|----------------------|------------------------------|----------|
-| POST   | `/api/auth/login`    | Iniciar sesión               | público  |
-| POST   | `/api/auth/logout`   | Cerrar sesión                | autent.  |
-| GET    | `/api/auth/me`       | Datos del usuario actual     | autent.  |
-| POST   | `/api/auth/refresh`  | Renovar access token         | autent.  |
+|--------|----------------------|-------------------------------|----------|
+| POST   | `/api/auth/login`    | Iniciar sesión                | público  |
+| POST   | `/api/auth/logout`   | Cerrar sesión                 | autent.  |
+| GET    | `/api/auth/me`       | Datos del usuario actual      | autent.  |
+| POST   | `/api/auth/refresh`  | Renovar access token          | autent.  |
 
 ### Productos y Categorías
 
 | Método | Ruta                        | Descripción                        | Rol     |
-|--------|-----------------------------|------------------------------------|---------|
+|--------|-----------------------------|-------------------------------------|---------|
 | GET    | `/api/products`             | Listar productos (con filtros)     | autent. |
 | POST   | `/api/products`             | Crear producto                     | admin   |
 | PUT    | `/api/products/:id`         | Actualizar producto                | admin   |
@@ -374,39 +394,65 @@ Ver `backend/src/db/schema.sql` para el DDL completo (incluye `CHECK` constraint
 ### Movimientos y Kárdex
 
 | Método | Ruta                        | Descripción                          | Rol     |
-|--------|-----------------------------|--------------------------------------|---------|
+|--------|-----------------------------|----------------------------------------|---------|
 | GET    | `/api/movements`            | Listar movimientos                   | autent. |
 | POST   | `/api/movements`            | Registrar movimiento (transacción)   | autent. |
 | GET    | `/api/kardex`               | Historial kárdex por producto        | autent. |
 
-### Dashboard, Reportes y Finanzas
+### Dashboard
 
 | Método | Ruta                                       | Descripción                    | Rol     |
-|--------|--------------------------------------------|--------------------------------|---------|
+|--------|---------------------------------------------|----------------------------------|---------|
 | GET    | `/api/dashboard/stats`                     | KPIs globales                  | autent. |
 | GET    | `/api/dashboard/low-stock`                 | Productos bajo stock mínimo    | autent. |
-| GET    | `/api/reports/stock-by-category`           | Stock y valor por categoría    | autent. |
-| GET    | `/api/reports/movements-summary?days=7`    | Movimientos por día            | autent. |
-| GET    | `/api/finance`                             | Indicadores financieros        | autent. |
 
-### Usuarios (Admin)
+### Usuarios internos (Admin)
 
-| Método | Ruta                  | Descripción         | Rol   |
-|--------|-----------------------|---------------------|-------|
-| GET    | `/api/users`          | Listar usuarios     | admin |
-| POST   | `/api/users`          | Crear usuario       | admin |
-| DELETE | `/api/users/:id`      | Eliminar usuario    | admin |
+| Método | Ruta                  | Descripción                                          | Rol   |
+|--------|-----------------------|---------------------------------------------------------|-------|
+| GET    | `/api/users`          | Listar usuarios (staff + clientes)                    | admin |
+| POST   | `/api/users`          | Crear usuario (admin/empleado)                        | admin |
+| PUT    | `/api/users/:id`      | Editar usuario (datos, rol, permisos, contraseña)     | admin |
+| PATCH  | `/api/users/:id`      | Actualizar solo la foto de perfil                     | admin |
+| DELETE | `/api/users/:id`      | Eliminar usuario (bloqueado para auto-eliminarse o dejar el sistema sin admins) | admin |
+
+### Reseñas (Admin)
+
+| Método | Ruta                  | Descripción                    | Rol   |
+|--------|-----------------------|-----------------------------------|-------|
+| GET    | `/api/reviews`        | Listar todas las reseñas         | autent. |
+| DELETE | `/api/reviews/:id`    | Eliminar una reseña               | autent. |
 
 ### E-commerce (Clientes)
 
+| Método | Ruta                            | Descripción                           | Rol      |
+|--------|----------------------------------|------------------------------------------|----------|
+| GET    | `/api/public/products`         | Catálogo público de productos         | público  |
+| GET    | `/api/public/products/:sku`    | Detalle de producto público (por SKU) | público  |
+| GET    | `/api/public/categories`       | Categorías con contador de productos  | público  |
+| GET    | `/api/public/featured`         | Productos destacados para la Home     | público  |
+| GET    | `/api/public/reviews`          | Reseñas publicadas                    | público  |
+| POST   | `/api/public/reviews`          | Publicar una reseña                   | público  |
+| POST   | `/api/customer/register`       | Registro de cliente                   | público  |
+| POST   | `/api/customer/login`          | Login de cliente                      | público  |
+| POST   | `/api/customer/forgot-password`| Solicitar recuperación de contraseña  | público  |
+| POST   | `/api/customer/reset-password` | Restablecer contraseña con token      | público  |
+| POST   | `/api/customer/logout`         | Cerrar sesión de cliente              | cliente  |
+| GET    | `/api/customer/me`             | Datos del cliente actual              | cliente  |
+| PUT    | `/api/customer/me`              | Actualizar perfil / contraseña del cliente | cliente  |
+| DELETE | `/api/customer/:id`             | Eliminar cliente                      | admin    |
+| POST   | `/api/orders/checkout`         | Crear pedido (checkout simulado)      | cliente  |
+| GET    | `/api/orders/mine`              | Listar pedidos del cliente actual     | cliente  |
+| GET    | `/api/orders/mine/:id`          | Detalle de un pedido propio           | cliente  |
+| PUT    | `/api/orders/mine/:id/cancel`   | Cancelar un pedido propio (repone stock) | cliente  |
+
+### Pedidos (Admin)
+
 | Método | Ruta                          | Descripción                           | Rol      |
-|--------|-------------------------------|---------------------------------------|----------|
-| GET    | `/api/public/products`        | Catálogo público de productos         | público  |
-| GET    | `/api/public/products/:id`    | Detalle de producto público           | público  |
-| POST   | `/api/customer/register`      | Registro de cliente                   | público  |
-| POST   | `/api/customer/login`         | Login de cliente                      | público  |
-| GET    | `/api/orders`                 | Listar pedidos del cliente            | cliente  |
-| POST   | `/api/orders`                 | Crear pedido (checkout)               | cliente  |
+|--------|-------------------------------|------------------------------------------|----------|
+| GET    | `/api/orders`                 | Listar todos los pedidos              | autent.  |
+| GET    | `/api/orders/:id`             | Detalle de cualquier pedido           | autent.  |
+| PUT    | `/api/orders/:id/status`      | Cambiar estado del pedido             | autent.  |
 
 **Filtros disponibles en `/api/products`:**
 - `?q=texto` — busca en nombre, SKU, marca, modelo (ILIKE)
@@ -416,9 +462,21 @@ Ver `backend/src/db/schema.sql` para el DDL completo (incluye `CHECK` constraint
 
 ---
 
-## 8. Pruebas Funcionales
+## 8. Pruebas
 
-### 8.1. Smoke test con `curl`
+### 8.1. Pruebas automatizadas
+
+```bash
+# Backend (Jest) — utilidades de precios y tokens JWT
+cd backend
+npm test
+
+# Frontend — tests unitarios de permisos
+cd frontend
+yarn test    # o `npm test`
+```
+
+### 8.2. Smoke test con `curl`
 
 ```bash
 API=http://localhost:5001
@@ -426,7 +484,7 @@ API=http://localhost:5001
 # Login (guarda cookies)
 curl -c cookies.txt -X POST $API/api/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@motonation.com","password":"Admin123!"}'
+  -d '{"email":"admin@motonation.com","password":"admin123"}'
 
 # Usar la cookie en peticiones posteriores
 curl -b cookies.txt $API/api/auth/me
@@ -434,19 +492,24 @@ curl -b cookies.txt $API/api/dashboard/stats
 curl -b cookies.txt $API/api/products | head
 ```
 
-### 8.2. Pruebas funcionales recomendadas (E2E manuales)
+### 8.3. Pruebas funcionales recomendadas (E2E manuales)
 
-1. **Login** con credenciales válidas → redirección a `/dashboard`.
+1. **Login** con credenciales válidas → redirección a `/admin/dashboard`.
 2. **Crear producto** (admin) → aparece en la tabla.
 3. **Registrar salida** con cantidad mayor al stock actual → debe rechazarse con `400 Stock insuficiente para salida`.
 4. **Registrar entrada/salida** → el stock se actualiza y aparece en `Movimientos` y `Kárdex`.
 5. **Bajar stock por debajo de `min_stock`** → el producto aparece en `Alertas` (tarjeta ámbar).
-6. **Consultar Finance** → los indicadores reflejan los movimientos registrados.
-7. **Cerrar sesión** → redirección a `/login`.
-8. **Login como empleado** → el menú `Usuarios` NO aparece (control de rol).
-9. **Crear categoría con productos** → no se puede eliminar (FK protegida).
-10. **Registrar un cliente** en la tienda pública → puede iniciar sesión y ver sus pedidos en `MyOrders`.
-11. **Agregar productos al carrito** y completar el Checkout → el stock se descuenta automáticamente.
+6. **Cerrar sesión** → redirección a `/admin/login`.
+7. **Login como empleado** → el menú `Usuarios` NO aparece (control de rol) y solo se ven las secciones habilitadas por sus permisos.
+8. **Crear categoría con productos** → no se puede eliminar (FK protegida).
+9. **Registrar un cliente** en la tienda pública → puede iniciar sesión y ver sus pedidos en `Mis Pedidos`.
+10. **Agregar productos al carrito** y completar el Checkout → el stock se descuenta automáticamente y el pedido aparece en `Pedidos` (admin).
+11. **Cancelar un pedido propio** desde `Mis Pedidos` → el stock se repone y queda registrado en Kárdex.
+12. **Editar un usuario** (admin) → cambiar nombre, correo, rol, permisos o contraseña se refleja de inmediato en la tabla.
+13. **Intentar eliminar tu propio usuario o al único admin** → debe rechazarse con `400`.
+14. **Dejar una reseña** desde la Home pública → aparece de inmediato en la sección de testimonios; moderarla/eliminarla desde `Reseñas` (admin).
+15. **Solicitar recuperación de contraseña** → usar el token devuelto en modo desarrollo para restablecerla en `/cuenta/restablecer`.
+16. **Fallar el login 11 veces seguidas** (mismo IP) → la 11.ª intenta debe devolver `429 Too Many Requests`.
 
 ---
 
@@ -455,21 +518,33 @@ curl -b cookies.txt $API/api/products | head
 - Las imágenes de productos se referencian por URL (Unsplash) — no se almacenan binarios.
 - El logo de la marca se encuentra en `frontend/public/motonaations.png` y `frontend/src/assets/motonaations.png`.
 - El seed completo está en `backend/src/db/seed.js`.
+- El Kárdex permite exportar el historial de movimientos a PDF (jsPDF).
 - No se requieren archivos adicionales externos.
 
 ---
 
-## 10. Para Despliegue en Producción
+## 10. Seguridad Implementada
+
+- Contraseñas con **bcrypt** (10 rondas), nunca en texto plano.
+- Sesión de staff y de clientes con **JWT** de acceso (8h) + refresco (7d) en cookies `httpOnly`.
+- Protección **anti fuerza bruta**: `express-rate-limit` en `/api/auth/login`, `/api/customer/login`, `/api/customer/register`, `/api/customer/forgot-password` y `/api/customer/reset-password` (10 intentos / 15 min por IP).
+- Recuperación de contraseña con token de un solo uso, hasheado (SHA-256) y con expiración de 30 minutos; la respuesta al solicitar el reset no revela si el correo existe.
+- Cabeceras de seguridad HTTP con **helmet** (XSS, sniffing, clickjacking).
+- Reglas de negocio a nivel de API: nadie puede eliminar su propia cuenta ni dejar el sistema sin administradores (ni por edición de rol ni por borrado).
+- Validación de payloads con **zod** en todas las rutas que escriben en la base de datos.
+
+## 11. Para Despliegue en Producción
 
 - Configurar `CORS_ORIGIN` con el dominio del frontend (no `*`).
 - Las cookies usan `SameSite=None; Secure=true`, requieren **HTTPS**.
 - Cambiar `JWT_SECRET`, credenciales de admin y contraseña de base de datos antes de exponer.
 - Usar `npm start` (no `dev`).
+- Configurar un proveedor de email real para la recuperación de contraseña (hoy el token se devuelve en la respuesta, solo apto para desarrollo).
 - Considerar PM2 o systemd para mantener el proceso vivo.
 
 ---
 
-## 11. Comandos Útiles (Cheat Sheet)
+## 12. Comandos Útiles (Cheat Sheet)
 
 ```bash
 # Backend
@@ -478,12 +553,14 @@ npm install              # instalar deps
 npm run dev              # arrancar con hot-reload (nodemon)
 npm start                # arrancar en modo producción
 npm run migrate          # aplicar schema manualmente
-npm run seed             # cargar datos demo
+npm run seed              # cargar datos demo
+npm test                  # correr tests (Jest)
 
 # Frontend
 cd frontend
 yarn install
 yarn start
+yarn test                 # correr tests
 
 # PostgreSQL — entrar al CLI
 psql -U postgres -d motonation-final
