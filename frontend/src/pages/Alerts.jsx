@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
-import api from "@/lib/api";
+import api, { formatApiError } from "@/lib/api";
 import { Badge } from "@/components/ui-kit";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, AlertCircle } from "lucide-react";
 
 export default function Alerts() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     api.get("/dashboard/low-stock")
       .then((r) => setItems(r.data))
       .catch((err) => {
         console.error("Error al cargar alertas:", err);
+        setError(formatApiError(err));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -37,7 +39,13 @@ export default function Alerts() {
         </div>
       </div>
 
-      {items.length === 0 ? (
+      {error ? (
+        <div className="border border-red-500/30 bg-red-500/[0.03] p-16 text-center">
+          <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-4" />
+          <div className="font-display font-black text-2xl uppercase text-red-400">No se pudieron cargar las alertas</div>
+          <p className="text-zinc-500 mt-2">{error}</p>
+        </div>
+      ) : items.length === 0 ? (
         <div className="border border-emerald-500/30 bg-emerald-500/[0.03] p-16 text-center">
           <div className="font-display font-black text-4xl uppercase text-emerald-400">✓ Stock OK</div>
           <p className="text-zinc-400 mt-2">Sin productos por debajo del mínimo configurado.</p>

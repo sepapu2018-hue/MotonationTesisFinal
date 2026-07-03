@@ -50,6 +50,9 @@ export default function CustomerLogin() {
               data-testid="customer-login-password"
               className="w-full bg-transparent border border-white/15 px-3 py-2.5 text-sm focus:outline-none focus:border-[#10B981]" />
           </label>
+          <div className="text-right -mt-2">
+            <Link to="/cuenta/olvide" className="text-xs text-zinc-500 hover:text-[#10B981]">¿Olvidaste tu contraseña?</Link>
+          </div>
           {error && <div className="border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">{error}</div>}
           <button type="submit" disabled={loading} data-testid="customer-login-submit"
             className="w-full bg-[#10B981] hover:bg-[#34D399] disabled:opacity-60 text-black font-display uppercase tracking-widest font-black py-3 transition-colors">

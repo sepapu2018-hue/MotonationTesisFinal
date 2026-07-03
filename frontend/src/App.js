@@ -15,10 +15,10 @@ import Products from "@/pages/Products";
 import Categories from "@/pages/Categories";
 import Movements from "@/pages/Movements";
 import Alerts from "@/pages/Alerts";
-import Reports from "@/pages/Reports";
 import Users from "@/pages/Users";
 import Kardex from "@/pages/Kardex";
-import Finance from "@/pages/Finance";
+import Orders from "@/pages/Orders";
+import Reviews from "@/pages/Reviews";
 
 // Public pages
 import Home from "@/pages/public/Home";
@@ -27,8 +27,11 @@ import ProductDetail from "@/pages/public/ProductDetail";
 import Cart from "@/pages/public/Cart";
 import Checkout from "@/pages/public/Checkout";
 import MyOrders from "@/pages/public/MyOrders";
+import Account from "@/pages/public/Account";
 import CustomerLogin from "@/pages/public/CustomerLogin";
 import CustomerRegister from "@/pages/public/CustomerRegister";
+import ForgotPassword from "@/pages/public/ForgotPassword";
+import ResetPassword from "@/pages/public/ResetPassword";
 
 function App() {
   return (
@@ -47,8 +50,11 @@ function App() {
                   <Route path="/carrito" element={<Cart />} />
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/mis-pedidos" element={<MyOrders />} />
+                  <Route path="/mi-cuenta" element={<Account />} />
                   <Route path="/cuenta/entrar" element={<CustomerLogin />} />
                   <Route path="/cuenta/registro" element={<CustomerRegister />} />
+                  <Route path="/cuenta/olvide" element={<ForgotPassword />} />
+                  <Route path="/cuenta/restablecer" element={<ResetPassword />} />
                 </Route>
 
                 {/* Panel administrativo */}
@@ -60,9 +66,9 @@ function App() {
                   <Route path="categorias" element={<Categories />} />
                   <Route path="movimientos" element={<Movements />} />
                   <Route path="kardex" element={<Kardex />} />
+                  <Route path="pedidos" element={<Orders />} />
+                  <Route path="resenas" element={<Reviews />} />
                   <Route path="alertas" element={<Alerts />} />
-                  <Route path="reportes" element={<Reports />} />
-                  <Route path="finanzas" element={<Finance />} />
                   <Route path="usuarios" element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
                 </Route>
 

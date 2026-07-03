@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import api from "@/lib/api";
+import api, { formatApiError } from "@/lib/api";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 import { Search, Filter, X, ShoppingCart, Flame, Sparkles } from "lucide-react";
@@ -13,7 +13,13 @@ export default function Shop() {
   const [cats, setCats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState(searchParams.get("q") || "");
+  const [debouncedQ, setDebouncedQ] = useState(q);
   const { addItem } = useCart();
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q), 300);
+    return () => clearTimeout(t);
+  }, [q]);
 
   const quickAdd = (e, p) => {
     e.preventDefault();
@@ -30,19 +36,20 @@ export default function Shop() {
   const sort = searchParams.get("sort") || "newest";
 
   useEffect(() => {
-    api.get("/public/categories").then((r) => setCats(r.data));
+    api.get("/public/categories").then((r) => setCats(r.data)).catch((err) => toast.error(formatApiError(err)));
   }, []);
 
   useEffect(() => {
     setLoading(true);
     const params = { in_stock: "true" };
-    if (q) params.q = q;
+    if (debouncedQ) params.q = debouncedQ;
     if (type) params.type = type;
     if (categoryId) params.category_id = categoryId;
     api.get("/public/products", { params })
       .then((r) => setProducts(r.data))
+      .catch((err) => toast.error(formatApiError(err)))
       .finally(() => setLoading(false));
-  }, [q, type, categoryId]);
+  }, [debouncedQ, type, categoryId]);
 
   const sorted = useMemo(() => {
     const arr = [...products];

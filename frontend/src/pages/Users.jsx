@@ -1,9 +1,22 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { Card, PageHeader, PrimaryButton, Field, inputClass, Badge } from "@/components/ui-kit";
+import { Card, PageHeader, PrimaryButton, GhostButton, Field, inputClass, Badge } from "@/components/ui-kit";
 import Avatar from "@/components/Avatar";
-import { Trash2, UserPlus, Upload, X, Pencil } from "lucide-react";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { Trash2, UserPlus, Upload, X, Pencil, Edit2 } from "lucide-react";
+
+const PERMISSION_OPTIONS = [
+  { id: 'view_dashboard',  label: 'Ver Dashboard' },
+  { id: 'view_products',   label: 'Ver Productos' },
+  { id: 'view_categories', label: 'Ver Categorías' },
+  { id: 'create_sale',     label: 'Registrar Ventas / Movimientos' },
+  { id: 'view_kardex',     label: 'Ver Kárdex' },
+  { id: 'view_orders',     label: 'Ver Pedidos' },
+  { id: 'view_reviews',    label: 'Ver Reseñas' },
+  { id: 'view_alerts',     label: 'Ver Alertas' },
+];
 
 // Convierte un archivo a base64 (data URL). Limita a 800KB.
 function fileToBase64(file) {
@@ -26,7 +39,13 @@ export default function Users() {
   const [error, setError] = useState("");
   const fileRef = useRef(null);
 
-  const load = () => api.get("/users").then((r) => setUsers(r.data));
+  const [editing, setEditing] = useState(null);
+  const [editForm, setEditForm] = useState({ email: "", name: "", role: "empleado", permissions: [], password: "" });
+  const [editError, setEditError] = useState("");
+  const [toDelete, setToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const load = () => api.get("/users").then((r) => setUsers(r.data)).catch((err) => toast.error(formatApiError(err)));
   useEffect(() => { load(); }, []);
 
   // Filtrado: staff = admin + empleado, customers = customer
@@ -69,17 +88,43 @@ export default function Users() {
     if (u.id === me?.id) refresh();
   };
 
-  // CORREGIDO: detecta si es customer y llama a la ruta correcta
-  const del = async (u) => {
-    if (!window.confirm(`Eliminar usuario "${u.email}"?`)) return;
+  const openEdit = (u) => {
+    setEditing(u);
+    setEditForm({ email: u.email, name: u.name, role: u.role, permissions: u.permissions || [], password: "" });
+    setEditError("");
+  };
+
+  const saveEdit = async (e) => {
+    e.preventDefault();
+    setEditError("");
     try {
-      if (u.role === "customer") {
-        await api.delete(`/customer/${u.id}`);
-      } else {
-        await api.delete(`/users/${u.id}`);
-      }
+      const payload = { ...editForm };
+      if (!payload.password) delete payload.password;
+      await api.put(`/users/${editing.id}`, payload);
+      setEditing(null);
       load();
-    } catch (err) { alert(formatApiError(err)); }
+      if (editing.id === me?.id) refresh();
+    } catch (err) { setEditError(formatApiError(err)); }
+  };
+
+  // Detecta si es customer y llama a la ruta correcta
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    try {
+      if (toDelete.role === "customer") {
+        await api.delete(`/customer/${toDelete.id}`);
+      } else {
+        await api.delete(`/users/${toDelete.id}`);
+      }
+      toast.success(`Usuario "${toDelete.email}" eliminado`);
+      setToDelete(null);
+      load();
+    } catch (err) {
+      toast.error(formatApiError(err));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -129,8 +174,9 @@ export default function Users() {
                         {u.avatar_url && (
                           <button onClick={() => removeAvatar(u)} className="p-2 text-zinc-400 hover:text-amber-400 transition-colors"><X className="h-4 w-4" /></button>
                         )}
+                        <button onClick={() => openEdit(u)} data-testid={`edit-user-${u.email}`} className="p-2 text-zinc-400 hover:text-[#10B981] transition-colors"><Edit2 className="h-4 w-4" /></button>
                         {u.id !== me.id && (
-                          <button onClick={() => del(u)} className="p-2 text-zinc-400 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                          <button onClick={() => setToDelete(u)} className="p-2 text-zinc-400 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
                         )}
                       </td>
                     </tr>
@@ -186,7 +232,7 @@ export default function Users() {
                           <button onClick={() => removeAvatar(u)} className="p-2 text-zinc-400 hover:text-amber-400 transition-colors"><X className="h-4 w-4" /></button>
                         )}
                         {u.id !== me.id && (
-                          <button onClick={() => del(u)} className="p-2 text-zinc-400 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                          <button onClick={() => setToDelete(u)} className="p-2 text-zinc-400 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
                         )}
                       </td>
                     </tr>
@@ -235,16 +281,7 @@ export default function Users() {
             <div className="space-y-2 mt-2">
               <label className="block text-xs uppercase tracking-widest text-zinc-500 font-bold">Permisos Específicos</label>
               <div className="grid grid-cols-1 gap-2 border border-white/10 p-3 bg-[#0E0E0E]">
-                {[
-                  { id: 'view_dashboard',  label: 'Ver Dashboard' },
-                  { id: 'view_products',   label: 'Ver Productos' },
-                  { id: 'view_categories', label: 'Ver Categorías' },
-                  { id: 'create_sale',     label: 'Registrar Ventas / Movimientos' },
-                  { id: 'view_kardex',     label: 'Ver Kárdex' },
-                  { id: 'view_alerts',     label: 'Ver Alertas' },
-                  { id: 'view_reports',    label: 'Ver Reportes' },
-                  { id: 'view_finance',    label: 'Ver Finanzas' },
-                ].map((p) => (
+                {PERMISSION_OPTIONS.map((p) => (
                   <label key={p.id} className="flex items-center gap-3 text-sm text-zinc-300 cursor-pointer hover:text-white">
                     <input 
                       type="checkbox"
@@ -270,6 +307,72 @@ export default function Users() {
         </Card>
 
       </div>
+
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" data-testid="edit-user-modal">
+          <form onSubmit={saveEdit} className="w-full max-w-lg bg-[#141414] border border-white/10 p-8 max-h-[90vh] overflow-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#10B981] mb-1">// Editar</div>
+                <h3 className="font-display font-black text-2xl uppercase">Editar Usuario</h3>
+              </div>
+              <button type="button" onClick={() => setEditing(null)}><X /></button>
+            </div>
+
+            <div className="space-y-4">
+              <Field label="Nombre"><input required value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className={inputClass()} /></Field>
+              <Field label="Email"><input type="email" required value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className={inputClass()} /></Field>
+              <Field label="Nueva contraseña (opcional)">
+                <input type="password" minLength={6} placeholder="Dejar en blanco para no cambiarla" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} className={inputClass()} />
+              </Field>
+              <Field label="Rol">
+                <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })} className={inputClass()}>
+                  <option value="empleado">Empleado</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </Field>
+
+              <div className="space-y-2 mt-2">
+                <label className="block text-xs uppercase tracking-widest text-zinc-500 font-bold">Permisos Específicos</label>
+                <div className="grid grid-cols-1 gap-2 border border-white/10 p-3 bg-[#0E0E0E]">
+                  {PERMISSION_OPTIONS.map((p) => (
+                    <label key={p.id} className="flex items-center gap-3 text-sm text-zinc-300 cursor-pointer hover:text-white">
+                      <input
+                        type="checkbox"
+                        className="accent-[#10B981]"
+                        checked={editForm.permissions?.includes(p.id)}
+                        onChange={(e) => {
+                          const current = editForm.permissions || [];
+                          const updated = e.target.checked
+                            ? [...current, p.id]
+                            : current.filter((item) => item !== p.id);
+                          setEditForm({ ...editForm, permissions: updated });
+                        }}
+                      />
+                      {p.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {editError && <div className="mt-4 border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">{editError}</div>}
+            <div className="mt-6 flex justify-end gap-3">
+              <GhostButton type="button" onClick={() => setEditing(null)}>Cancelar</GhostButton>
+              <PrimaryButton type="submit">Guardar cambios</PrimaryButton>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={!!toDelete}
+        title="Eliminar usuario"
+        message={toDelete && `¿Eliminar usuario "${toDelete.email}"? Esta acción no se puede deshacer.`}
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setToDelete(null)}
+      />
     </div>
   );
 }

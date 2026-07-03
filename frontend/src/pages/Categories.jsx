@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Card, PageHeader, PrimaryButton, Field, inputClass } from "@/components/ui-kit";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { Trash2, Plus, Pencil, Check, X } from "lucide-react";
 
 export default function Categories() {
@@ -13,8 +15,10 @@ export default function Categories() {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ name: "", description: "" });
   const [editError, setEditError] = useState("");
+  const [toDelete, setToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const load = () => api.get("/categories").then((r) => setCats(r.data));
+  const load = () => api.get("/categories").then((r) => setCats(r.data)).catch((err) => toast.error(formatApiError(err)));
   useEffect(() => { load(); }, []);
 
   const create = async (e) => {
@@ -27,10 +31,19 @@ export default function Categories() {
     } catch (err) { setError(formatApiError(err)); }
   };
 
-  const del = async (c) => {
-    if (!window.confirm(`Eliminar categoría "${c.name}"?`)) return;
-    try { await api.delete(`/categories/${c.id}`); load(); }
-    catch (err) { alert(formatApiError(err)); }
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/categories/${toDelete.id}`);
+      toast.success(`Categoría "${toDelete.name}" eliminada`);
+      setToDelete(null);
+      load();
+    } catch (err) {
+      toast.error(formatApiError(err));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const startEdit = (c) => {
@@ -110,7 +123,7 @@ export default function Categories() {
                                 <button onClick={() => startEdit(c)} className="p-2 hover:text-[#10B981]" data-testid={`edit-cat-${c.name}`}>
                                   <Pencil className="h-4 w-4" />
                                 </button>
-                                <button onClick={() => del(c)} className="p-2 hover:text-[#10B981]" data-testid={`delete-cat-${c.name}`}>
+                                <button onClick={() => setToDelete(c)} className="p-2 hover:text-red-400" data-testid={`delete-cat-${c.name}`}>
                                   <Trash2 className="h-4 w-4" />
                                 </button>
                               </>
@@ -140,6 +153,15 @@ export default function Categories() {
           </Card>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!toDelete}
+        title="Eliminar categoría"
+        message={toDelete && `¿Eliminar categoría "${toDelete.name}"? Esta acción no se puede deshacer.`}
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setToDelete(null)}
+      />
     </div>
   );
 }

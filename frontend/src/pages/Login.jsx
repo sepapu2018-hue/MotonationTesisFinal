@@ -5,7 +5,7 @@ import { useNavigate, Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 
-const HERO = "http/images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=1600&q=80";
+const HERO = "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=1600&q=80";
 
 export default function Login() {
   const { user, login } = useAuth();

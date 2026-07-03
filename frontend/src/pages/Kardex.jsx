@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import api from "@/lib/api";
+import { toast } from "sonner";
+import api, { formatApiError } from "@/lib/api";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Search, FileText, ArrowDownToLine, ArrowUpFromLine, ShoppingCart, Download, Printer } from "lucide-react";
@@ -18,11 +19,11 @@ export default function Kardex() {
   const [data, setData] = useState(null);
   const [q, setQ] = useState("");
 
-  useEffect(() => { api.get("/products").then((r) => setProducts(r.data)); }, []);
+  useEffect(() => { api.get("/products").then((r) => setProducts(r.data)).catch((err) => toast.error(formatApiError(err))); }, []);
 
   useEffect(() => {
     if (!selected) { setData(null); return; }
-    api.get(`/kardex/${selected.id}`).then((r) => setData(r.data));
+    api.get(`/kardex/${selected.id}`).then((r) => setData(r.data)).catch((err) => toast.error(formatApiError(err)));
   }, [selected]);
 
   const filtered = products.filter((p) =>

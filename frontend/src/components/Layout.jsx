@@ -2,22 +2,23 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
-  LayoutDashboard, Package, ArrowLeftRight, BarChart3, Users, LogOut,
-  AlertTriangle, FolderKanban, Menu, X, Plus, FileText, DollarSign,
+  LayoutDashboard, Package, ArrowLeftRight, Users, LogOut,
+  AlertTriangle, FolderKanban, Menu, X, Plus, FileText, Truck, Star,
 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import Avatar from "@/components/Avatar";
 
+// El campo "group" solo se usa para dibujar separadores visuales entre bloques del menú
 const items = [
-  { to: "/admin/dashboard",    label: "Dashboard",    icon: LayoutDashboard, testid: "nav-dashboard",  permission: "view_dashboard" },
-  { to: "/admin/productos",    label: "Productos",    icon: Package,         testid: "nav-products",   permission: "view_products" },
-  { to: "/admin/categorias",   label: "Categorías",   icon: FolderKanban,    testid: "nav-categories", permission: "view_categories" },
-  { to: "/admin/movimientos",  label: "Movimientos",  icon: ArrowLeftRight,  testid: "nav-movements",  permission: "create_sale" },
-  { to: "/admin/kardex",       label: "Kárdex",       icon: FileText,        testid: "nav-kardex",     permission: "view_kardex" },
-  { to: "/admin/alertas",      label: "Alertas",      icon: AlertTriangle,   testid: "nav-alerts",     permission: "view_alerts" },
-  { to: "/admin/reportes",     label: "Reportes",     icon: BarChart3,       testid: "nav-reports",    permission: "view_reports" },
-  { to: "/admin/finanzas",     label: "Finanzas",     icon: DollarSign,      testid: "nav-finance",    permission: "view_finance" },
-  { to: "/admin/usuarios",     label: "Usuarios",     icon: Users,           testid: "nav-users",      adminOnly: true },
+  { to: "/admin/dashboard",    label: "Dashboard",    icon: LayoutDashboard, testid: "nav-dashboard",  permission: "view_dashboard", group: "overview" },
+  { to: "/admin/productos",    label: "Productos",    icon: Package,         testid: "nav-products",   permission: "view_products",  group: "catalogo" },
+  { to: "/admin/categorias",   label: "Categorías",   icon: FolderKanban,    testid: "nav-categories", permission: "view_categories", group: "catalogo" },
+  { to: "/admin/resenas",      label: "Reseñas",      icon: Star,            testid: "nav-reviews",    permission: "view_reviews",   group: "catalogo" },
+  { to: "/admin/movimientos",  label: "Movimientos",  icon: ArrowLeftRight,  testid: "nav-movements",  permission: "create_sale",    group: "operaciones" },
+  { to: "/admin/kardex",       label: "Kárdex",       icon: FileText,        testid: "nav-kardex",     permission: "view_kardex",    group: "operaciones" },
+  { to: "/admin/pedidos",      label: "Pedidos",      icon: Truck,           testid: "nav-orders",     permission: "view_orders",    group: "operaciones" },
+  { to: "/admin/alertas",      label: "Alertas",      icon: AlertTriangle,   testid: "nav-alerts",     permission: "view_alerts",    group: "analisis" },
+  { to: "/admin/usuarios",     label: "Usuarios",     icon: Users,           testid: "nav-users",      adminOnly: true,              group: "admin" },
 ];
 
 export default function Layout() {
@@ -30,7 +31,10 @@ export default function Layout() {
   // Admin ve todo. Empleado solo ve items sin permission, o donde tenga el permiso.
   const visible = items.filter((item) => {
     if (item.adminOnly) return user?.role === "admin";
-    if (item.permission) return user?.role === "admin" || user?.permissions?.includes(item.permission);
+    if (item.permission) {
+      const perms = Array.isArray(item.permission) ? item.permission : [item.permission];
+      return user?.role === "admin" || perms.some((p) => user?.permissions?.includes(p));
+    }
     return true;
   });
 
@@ -39,7 +43,7 @@ export default function Layout() {
     navigate("/admin/login", { replace: true });
   };
 
-  const showFab = !["/admin/usuarios", "/admin/categorias", "/admin/finanzas", "/admin/kardex"].some((p) => location.pathname.startsWith(p));
+  const showFab = !["/admin/usuarios", "/admin/categorias", "/admin/kardex", "/admin/pedidos", "/admin/resenas"].some((p) => location.pathname.startsWith(p));
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white relative">
@@ -55,25 +59,27 @@ export default function Layout() {
             </div>
           </div>
 
-          <nav className="hidden lg:flex items-center gap-1 flex-1">
-            {visible.map(({ to, label, icon: Icon, testid }) => (
-              <NavLink
-                key={to}
-                to={to}
-                data-testid={testid}
-                className={({ isActive }) =>
-                  ["group relative flex items-center gap-2 px-3 py-2 text-xs uppercase tracking-widest font-display font-bold transition-all",
-                    isActive ? "text-white" : "text-zinc-500 hover:text-white"].join(" ")
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <Icon className="h-3.5 w-3.5" />
-                    <span>{label}</span>
-                    {isActive && <span className="absolute left-0 right-0 -bottom-[17px] h-[2px] bg-[#10B981]" />}
-                  </>
-                )}
-              </NavLink>
+          <nav className="hidden lg:flex items-center flex-1">
+            {visible.map(({ to, label, icon: Icon, testid, group }, i) => (
+              <div key={to} className="flex items-center">
+                {i > 0 && visible[i - 1].group !== group && <span className="h-4 w-px bg-white/10 mx-2" />}
+                <NavLink
+                  to={to}
+                  data-testid={testid}
+                  className={({ isActive }) =>
+                    ["group relative flex items-center gap-2 px-2.5 py-2 text-xs uppercase tracking-widest font-display font-bold transition-all",
+                      isActive ? "text-white" : "text-zinc-500 hover:text-white"].join(" ")
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Icon className="h-3.5 w-3.5" />
+                      <span>{label}</span>
+                      {isActive && <span className="absolute left-0 right-0 -bottom-[17px] h-[2px] bg-[#10B981]" />}
+                    </>
+                  )}
+                </NavLink>
+              </div>
             ))}
           </nav>
 
@@ -102,19 +108,21 @@ export default function Layout() {
         {open && (
           <div className="lg:hidden border-t border-white/10 bg-[#0A0A0A]">
             <div className="max-w-[1600px] mx-auto px-4 py-3 grid grid-cols-2 gap-2">
-              {visible.map(({ to, label, icon: Icon, testid }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  onClick={() => setOpen(false)}
-                  data-testid={`${testid}-mobile`}
-                  className={({ isActive }) =>
-                    ["flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-display font-bold border",
-                      isActive ? "bg-[#10B981]/10 border-[#10B981] text-white" : "border-white/10 text-zinc-400"].join(" ")
-                  }
-                >
-                  <Icon className="h-3.5 w-3.5" /> {label}
-                </NavLink>
+              {visible.map(({ to, label, icon: Icon, testid, group }, i) => (
+                <div key={to} className="contents">
+                  {i > 0 && visible[i - 1].group !== group && <div className="col-span-2 h-px bg-white/10 my-1" />}
+                  <NavLink
+                    to={to}
+                    onClick={() => setOpen(false)}
+                    data-testid={`${testid}-mobile`}
+                    className={({ isActive }) =>
+                      ["flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-display font-bold border",
+                        isActive ? "bg-[#10B981]/10 border-[#10B981] text-white" : "border-white/10 text-zinc-400"].join(" ")
+                    }
+                  >
+                    <Icon className="h-3.5 w-3.5" /> {label}
+                  </NavLink>
+                </div>
               ))}
               <button onClick={doLogout} className="col-span-2 mt-1 px-3 py-2.5 border border-white/10 text-xs uppercase tracking-widest font-bold flex items-center justify-center gap-2">
                 <LogOut className="h-3.5 w-3.5" /> Salir ({user?.name})

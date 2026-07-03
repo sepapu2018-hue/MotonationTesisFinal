@@ -63,7 +63,13 @@ export default function PublicLayout() {
                 >
                   <Package className="h-3.5 w-3.5" /> Mis pedidos
                 </Link>
-                <div className="text-xs uppercase tracking-widest font-bold text-zinc-500">{customer.name?.split(" ")[0]}</div>
+                <Link
+                  to="/mi-cuenta"
+                  data-testid="account-link"
+                  className="px-3 py-2 text-xs uppercase tracking-widest font-display font-bold text-zinc-300 hover:text-[#10B981] flex items-center gap-1.5"
+                >
+                  <User className="h-3.5 w-3.5" /> {customer.name?.split(" ")[0]}
+                </Link>
                 <button onClick={doLogout} className="p-2 text-zinc-400 hover:text-[#10B981]" title="Cerrar sesión">
                   <LogOut className="h-4 w-4" />
                 </button>
@@ -108,7 +114,8 @@ export default function PublicLayout() {
             {customer && customer !== false ? (
               <>
                 <Link to="/mis-pedidos" onClick={() => setOpen(false)} className="px-3 py-2.5 text-xs uppercase tracking-widest font-display font-bold border border-white/10">Mis pedidos</Link>
-                <button onClick={doLogout} className="px-3 py-2.5 text-xs uppercase tracking-widest font-display font-bold border border-white/10">Salir</button>
+                <Link to="/mi-cuenta" onClick={() => setOpen(false)} className="px-3 py-2.5 text-xs uppercase tracking-widest font-display font-bold border border-white/10">Mi cuenta</Link>
+                <button onClick={doLogout} className="col-span-2 px-3 py-2.5 text-xs uppercase tracking-widest font-display font-bold border border-white/10">Salir</button>
               </>
             ) : (
               <Link to="/cuenta/entrar" onClick={() => setOpen(false)} className="col-span-2 px-3 py-2.5 text-xs uppercase tracking-widest font-display font-bold border border-[#10B981] text-[#10B981]">
@@ -148,6 +155,7 @@ export default function PublicLayout() {
             <ul className="space-y-2 text-zinc-500 text-xs">
               <li><Link to="/cuenta/entrar" className="hover:text-[#10B981]">Iniciar sesión</Link></li>
               <li><Link to="/cuenta/registro" className="hover:text-[#10B981]">Crear cuenta</Link></li>
+              <li><Link to="/mi-cuenta" className="hover:text-[#10B981]">Mi cuenta</Link></li>
               <li><Link to="/mis-pedidos" className="hover:text-[#10B981]">Mis pedidos</Link></li>
               <li><Link to="/carrito" className="hover:text-[#10B981]">Mi carrito</Link></li>
             </ul>

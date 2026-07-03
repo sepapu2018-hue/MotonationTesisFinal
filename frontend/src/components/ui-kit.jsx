@@ -37,6 +37,18 @@ export function GhostButton({ children, className = "", testid, ...rest }) {
   );
 }
 
+export function DangerButton({ children, className = "", testid, ...rest }) {
+  return (
+    <button
+      data-testid={testid}
+      className={`bg-red-500/90 hover:bg-red-500 text-white font-display uppercase tracking-widest font-bold px-4 py-2 text-sm transition-colors disabled:opacity-50 ${className}`}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function Card({ children, className = "" }) {
   return <div className={`bg-[#141414] border border-white/10 ${className}`}>{children}</div>;
 }

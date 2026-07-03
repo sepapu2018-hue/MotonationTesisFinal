@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { PrimaryButton, GhostButton, Field, inputClass, Badge } from "@/components/ui-kit";
 import { ArrowDownToLine, ArrowUpFromLine, Plus, X, Activity, Loader2 } from "lucide-react";
@@ -13,11 +14,11 @@ export default function Movements() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const load = () => api.get("/movements?limit=300").then((r) => setMovs(r.data));
+  const load = () => api.get("/movements?limit=300").then((r) => setMovs(r.data)).catch((err) => toast.error(formatApiError(err)));
 
   useEffect(() => {
     load();
-    api.get("/products").then((r) => setProducts(r.data));
+    api.get("/products").then((r) => setProducts(r.data)).catch((err) => toast.error(formatApiError(err)));
   }, []);
 
   useEffect(() => {
@@ -38,8 +39,8 @@ export default function Movements() {
       setShowForm(false);
       setForm({ product_id: "", type: "entrada", quantity: 1, reason: "" });
       load();
-      api.get("/products").then((r) => setProducts(r.data));
-    } catch (err) { 
+      api.get("/products").then((r) => setProducts(r.data)).catch((err) => toast.error(formatApiError(err)));
+    } catch (err) {
       setError(formatApiError(err)); 
     } finally { 
       setSubmitting(false); 

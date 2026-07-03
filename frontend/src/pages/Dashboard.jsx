@@ -4,7 +4,7 @@ import api from "@/lib/api";
 import { Badge } from "@/components/ui-kit";
 import {
   Package, AlertTriangle, DollarSign, Activity, Bike, ShoppingBag, ArrowRight,
-  ArrowDownToLine, ArrowUpFromLine, TrendingUp,
+  ArrowDownToLine, ArrowUpFromLine, TrendingUp, AlertCircle,
 } from "lucide-react";
 
 // Pequeño helper para formatear $ con miles
@@ -14,31 +14,49 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [movs, setMovs] = useState([]);
   const [low, setLow] = useState([]);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     (async () => {
-      try {
-        const [s, m, l] = await Promise.all([
-          api.get("/dashboard/stats"),
-          api.get("/movements?limit=6"),
-          api.get("/dashboard/low-stock"),
-        ]);
-        setStats(s.data);
-        setMovs(m.data);
-        setLow(l.data);
-      } catch (e) {
-        // Si algún endpoint falla, mostramos lo que sí cargó (evita pantalla en blanco)
-        console.error("dashboard load:", e);
+      // allSettled: si un endpoint falla, igual mostramos los datos que sí cargaron
+      const [s, m, l] = await Promise.allSettled([
+        api.get("/dashboard/stats"),
+        api.get("/movements?limit=6"),
+        api.get("/dashboard/low-stock"),
+      ]);
+      if (s.status === "fulfilled") setStats(s.value.data);
+      if (m.status === "fulfilled") setMovs(m.value.data);
+      if (l.status === "fulfilled") setLow(l.value.data);
+      if ([s, m, l].some((r) => r.status === "rejected")) {
+        console.error("dashboard load:", [s, m, l].filter((r) => r.status === "rejected"));
+        setLoadError(true);
       }
     })();
   }, []);
 
-  if (!stats) {
+  if (!stats && !loadError) {
     return <div className="p-12 text-center text-zinc-500 font-display uppercase tracking-widest">Cargando…</div>;
+  }
+
+  if (!stats && loadError) {
+    return (
+      <div className="max-w-[1600px] mx-auto px-6 py-8">
+        <div className="border border-red-500/30 bg-red-500/[0.03] p-16 text-center">
+          <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-4" />
+          <div className="font-display font-black text-2xl uppercase text-red-400">No se pudo cargar el dashboard</div>
+          <p className="text-zinc-500 mt-2">Intenta recargar la página.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="max-w-[1600px] mx-auto px-6 py-8" data-testid="dashboard-header">
+      {loadError && (
+        <div className="mb-6 border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
+          Algunos datos del dashboard no se pudieron cargar. La información mostrada puede estar incompleta.
+        </div>
+      )}
       {/* Hero — valor del inventario en cronómetro gigante */}
       <section className="relative border border-white/10 bg-[#0E0E0E] overflow-hidden mb-6 fade-up">
         <div className="absolute inset-0 circuit-grid opacity-70 pointer-events-none" />

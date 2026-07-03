@@ -5,7 +5,7 @@ import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 import {
   ArrowRight, Zap, Shield, Truck, Award, Star, Quote,
-  Flame, Sparkles, MapPin, Phone, Mail, Send, ShoppingCart, Check
+  Flame, Sparkles, MapPin, Phone, Mail, ShoppingCart,
 } from "lucide-react";
 
 const HERO_BG = "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=2000&q=80";
@@ -26,16 +26,15 @@ const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits:
 export default function Home() {
   const [featured, setFeatured] = useState([]);
   const [cats, setCats] = useState([]);
-  const [email, setEmail] = useState("");
   const [reviews, setReviews] = useState([]);
   const [reviewForm, setReviewForm] = useState({ name: "", city: "", rating: 5, text: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
   const { addItem } = useCart();
 
   useEffect(() => {
-    api.get("/public/featured").then((r) => setFeatured(r.data));
-    api.get("/public/categories").then((r) => setCats(r.data));
-    api.get("/public/reviews").then((r) => setReviews(r.data));
+    api.get("/public/featured").then((r) => setFeatured(r.data)).catch((err) => toast.error(formatApiError(err)));
+    api.get("/public/categories").then((r) => setCats(r.data)).catch((err) => toast.error(formatApiError(err)));
+    api.get("/public/reviews").then((r) => setReviews(r.data)).catch((err) => toast.error(formatApiError(err)));
   }, []);
 
   const quickAdd = (e, p) => {
@@ -48,13 +47,6 @@ export default function Home() {
     });
   };
 
-  const subscribe = (e) => {
-    e.preventDefault();
-    if (!email) return;
-    toast.success("¡Suscripción exitosa!", { description: `Te enviaremos novedades a ${email}` });
-    setEmail("");
-  };
-
   const submitReview = (e) => {
     e.preventDefault();
     if (!reviewForm.name.trim() || !reviewForm.city.trim() || !reviewForm.text.trim()) {
@@ -64,7 +56,7 @@ export default function Home() {
     setSubmittingReview(true);
     api.post("/public/reviews", reviewForm)
       .then((r) => {
-        setReviews((prev) => [r.data, ...prev]);
+        setReviews((prev) => [r.data, ...prev].slice(0, 3));
         setReviewForm({ name: "", city: "", rating: 5, text: "" });
         toast.success("¡Gracias por tu reseña!", { description: "Ya se publicó en la página" });
       })
@@ -393,47 +385,6 @@ export default function Home() {
           </form>
           </div>
 
-        </div>
-      </section>
-
-      {/* NEWSLETTER */}
-      <section className="border-y border-white/10 bg-[#0E0E0E]">
-        <div className="max-w-[1400px] mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-          <div>
-            <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-2">// Únete al club</div>
-            <h2 className="font-display font-black text-4xl md:text-5xl uppercase leading-none">
-              Suscríbete y obtené<br /><span className="text-[#10B981]">10% off</span> en tu primera compra
-            </h2>
-            <p className="text-zinc-400 text-sm mt-4 max-w-md">
-              Promos exclusivas, lanzamientos antes que nadie y guías para riders. Sin spam.
-            </p>
-          </div>
-          <form onSubmit={subscribe} className="w-full">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 flex items-center gap-2 border border-white/15 bg-black px-4 py-3 focus-within:border-[#10B981]">
-                <Mail className="h-4 w-4 text-zinc-500" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@email.com"
-                  className="flex-1 bg-transparent outline-none text-sm"
-                  data-testid="newsletter-email"
-                />
-              </div>
-              <button
-                type="submit"
-                data-testid="newsletter-submit"
-                className="group bg-[#10B981] hover:bg-[#34D399] text-black font-display uppercase tracking-widest font-black px-6 py-3 flex items-center justify-center gap-2 transition-colors"
-              >
-                Suscribirme <Send className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
-            <div className="mt-4 flex items-center gap-2 text-[10px] uppercase tracking-widest text-zinc-500 font-mono">
-              <Check className="h-3 w-3 text-[#10B981]" /> Cero spam · cancelá cuando quieras
-            </div>
-          </form>
         </div>
       </section>
 

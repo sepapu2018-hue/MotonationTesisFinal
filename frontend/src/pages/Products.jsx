@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { PrimaryButton, GhostButton, Field, inputClass, Badge } from "@/components/ui-kit";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { Plus, Search, Edit2, Trash2, X, Package, Filter } from "lucide-react";
 
 const empty = {
@@ -25,17 +27,23 @@ export default function Products() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(empty);
   const [error, setError] = useState("");
+  const [toDelete, setToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
-    const params = {};
-    if (q) params.q = q;
-    if (typeFilter) params.type = typeFilter;
-    const { data } = await api.get("/products", { params });
-    setItems(data);
+    try {
+      const params = {};
+      if (q) params.q = q;
+      if (typeFilter) params.type = typeFilter;
+      const { data } = await api.get("/products", { params });
+      setItems(data);
+    } catch (err) {
+      toast.error(formatApiError(err));
+    }
   }, [q, typeFilter]);
 
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { api.get("/categories").then((r) => setCats(r.data)); }, []);
+  useEffect(() => { api.get("/categories").then((r) => setCats(r.data)).catch((err) => toast.error(formatApiError(err))); }, []);
 
   // Soporte para FAB: ?new=1 abre el modal automáticamente
   useEffect(() => {
@@ -79,10 +87,19 @@ export default function Products() {
     }
   };
 
-  const del = async (p) => {
-    if (!window.confirm(`¿Eliminar "${p.name}"?`)) return;
-    try { await api.delete(`/products/${p.id}`); load(); }
-    catch (err) { alert(formatApiError(err)); }
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/products/${toDelete.id}`);
+      toast.success(`Producto "${toDelete.name}" eliminado`);
+      setToDelete(null);
+      load();
+    } catch (err) {
+      toast.error(formatApiError(err));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const catName = (id) => cats.find((c) => c.id === id)?.name || "—";
@@ -186,7 +203,7 @@ export default function Products() {
                             <button onClick={() => openEdit(p)} className="p-2 hover:text-[#10B981] transition-colors" data-testid={`edit-${p.sku}`}>
                               <Edit2 className="h-4 w-4" />
                             </button>
-                            <button onClick={() => del(p)} className="p-2 hover:text-amber-400 transition-colors" data-testid={`delete-${p.sku}`}>
+                            <button onClick={() => setToDelete(p)} className="p-2 hover:text-red-400 transition-colors" data-testid={`delete-${p.sku}`}>
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
@@ -282,6 +299,15 @@ export default function Products() {
           </form>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!toDelete}
+        title="Eliminar producto"
+        message={toDelete && `¿Eliminar "${toDelete.name}"? Esta acción no se puede deshacer.`}
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setToDelete(null)}
+      />
     </div>
   );
 }
