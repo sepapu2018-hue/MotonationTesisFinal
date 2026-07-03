@@ -7,6 +7,7 @@ let poolConfig;
 if (process.env.DATABASE_URL) {
   poolConfig = {
     connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
   };
 } else {
   // Si estamos en local (pgAdmin), pasamos las credenciales ordenadas como objeto individual
