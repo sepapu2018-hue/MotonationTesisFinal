@@ -1,6 +1,6 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { z } = require('zod');
 const asyncHandler = require('../utils/asyncHandler');
 const { one } = require('../config/db');

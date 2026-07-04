@@ -1,7 +1,7 @@
 // Auth de clientes finales (separada del staff)
 const express = require('express');
 const rateLimit = require('express-rate-limit');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { z } = require('zod');
 const asyncHandler = require('../utils/asyncHandler');
