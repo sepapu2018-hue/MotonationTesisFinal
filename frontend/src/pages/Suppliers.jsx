@@ -1,0 +1,166 @@
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import api, { formatApiError } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
+import { Card, PageHeader, PrimaryButton, Field, inputClass } from "@/components/ui-kit";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { Trash2, Plus, Pencil, Check, X } from "lucide-react";
+
+const emptyForm = { name: "", contact: "", phone: "", email: "" };
+
+export default function Suppliers() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const [items, setItems] = useState([]);
+  const [form, setForm] = useState(emptyForm);
+  const [error, setError] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState(emptyForm);
+  const [editError, setEditError] = useState("");
+  const [toDelete, setToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const load = () => api.get("/suppliers").then((r) => setItems(r.data)).catch((err) => toast.error(formatApiError(err)));
+  useEffect(() => { load(); }, []);
+
+  const create = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await api.post("/suppliers", form);
+      setForm(emptyForm);
+      load();
+    } catch (err) { setError(formatApiError(err)); }
+  };
+
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/suppliers/${toDelete.id}`);
+      toast.success(`Proveedor "${toDelete.name}" eliminado`);
+      setToDelete(null);
+      load();
+    } catch (err) {
+      toast.error(formatApiError(err));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const startEdit = (s) => {
+    setEditingId(s.id);
+    setEditForm({ name: s.name, contact: s.contact || "", phone: s.phone || "", email: s.email || "" });
+    setEditError("");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditError("");
+  };
+
+  const saveEdit = async (id) => {
+    setEditError("");
+    try {
+      await api.put(`/suppliers/${id}`, editForm);
+      setEditingId(null);
+      load();
+    } catch (err) { setEditError(formatApiError(err)); }
+  };
+
+  return (
+    <div className="max-w-[1200px] mx-auto px-6 py-8">
+      <PageHeader kicker="Compras" title="Proveedores" testid="suppliers-header" count={items.length} />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm" data-testid="suppliers-table">
+                <thead className="border-b border-white/10">
+                  <tr className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold text-left">
+                    <th className="px-4 py-3">Nombre</th>
+                    <th className="px-4 py-3">Contacto</th>
+                    <th className="px-4 py-3">Teléfono</th>
+                    <th className="px-4 py-3">Correo</th>
+                    <th className="px-4 py-3 w-20"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((s) => (
+                    <tr key={s.id} className="border-b border-white/5">
+                      {editingId === s.id ? (
+                        <>
+                          <td className="px-4 py-3">
+                            <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className={inputClass()} data-testid={`edit-sup-name-${s.id}`} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <input value={editForm.contact} onChange={(e) => setEditForm({ ...editForm, contact: e.target.value })} className={inputClass()} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className={inputClass()} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <input value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className={inputClass()} />
+                            {editError && <div className="mt-1 text-xs text-amber-400">{editError}</div>}
+                          </td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
+                            <button onClick={() => saveEdit(s.id)} className="p-2 hover:text-[#10B981]" data-testid={`save-sup-${s.id}`}><Check className="h-4 w-4" /></button>
+                            <button onClick={cancelEdit} className="p-2 hover:text-amber-400" data-testid={`cancel-sup-${s.id}`}><X className="h-4 w-4" /></button>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-3 font-semibold">{s.name}</td>
+                          <td className="px-4 py-3 text-zinc-400">{s.contact || "—"}</td>
+                          <td className="px-4 py-3 text-zinc-400">{s.phone || "—"}</td>
+                          <td className="px-4 py-3 text-zinc-400">{s.email || "—"}</td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
+                            {isAdmin && (
+                              <>
+                                <button onClick={() => startEdit(s)} className="p-2 hover:text-[#10B981]" data-testid={`edit-sup-${s.name}`}><Pencil className="h-4 w-4" /></button>
+                                <button onClick={() => setToDelete(s)} className="p-2 hover:text-red-400" data-testid={`delete-sup-${s.name}`}><Trash2 className="h-4 w-4" /></button>
+                              </>
+                            )}
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                  {items.length === 0 && (
+                    <tr><td colSpan={5} className="px-4 py-12 text-center text-zinc-500">Sin proveedores registrados</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+
+        {isAdmin && (
+          <Card className="p-6">
+            <h3 className="font-display uppercase font-bold tracking-wider text-lg mb-4">Nuevo Proveedor</h3>
+            <form onSubmit={create} className="space-y-4">
+              <Field label="Nombre"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass()} data-testid="sup-name" /></Field>
+              <Field label="Contacto"><input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} className={inputClass()} data-testid="sup-contact" /></Field>
+              <Field label="Teléfono"><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass()} data-testid="sup-phone" /></Field>
+              <Field label="Correo"><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass()} data-testid="sup-email" /></Field>
+              {error && <div className="border border-[#10B981]/40 bg-[#10B981]/10 px-3 py-2 text-sm text-amber-400">{error}</div>}
+              <PrimaryButton type="submit" testid="sup-create" className="w-full">
+                <Plus className="h-4 w-4 inline -mt-0.5 mr-1" /> Crear
+              </PrimaryButton>
+            </form>
+          </Card>
+        )}
+      </div>
+
+      <ConfirmDialog
+        open={!!toDelete}
+        title="Eliminar proveedor"
+        message={toDelete && `¿Eliminar proveedor "${toDelete.name}"? Esta acción no se puede deshacer.`}
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setToDelete(null)}
+      />
+    </div>
+  );
+}

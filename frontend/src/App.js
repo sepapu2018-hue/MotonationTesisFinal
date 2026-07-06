@@ -13,6 +13,7 @@ import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Products from "@/pages/Products";
 import Categories from "@/pages/Categories";
+import Suppliers from "@/pages/Suppliers";
 import Movements from "@/pages/Movements";
 import Alerts from "@/pages/Alerts";
 import Users from "@/pages/Users";
@@ -64,6 +65,7 @@ function App() {
                   <Route path="dashboard" element={<Dashboard />} />
                   <Route path="productos" element={<Products />} />
                   <Route path="categorias" element={<Categories />} />
+                  <Route path="proveedores" element={<Suppliers />} />
                   <Route path="movimientos" element={<Movements />} />
                   <Route path="kardex" element={<Kardex />} />
                   <Route path="pedidos" element={<Orders />} />

@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   LayoutDashboard, Package, ArrowLeftRight, Users, LogOut,
-  AlertTriangle, FolderKanban, Menu, X, Plus, FileText, Truck, Star,
+  AlertTriangle, FolderKanban, Menu, X, Plus, FileText, Truck, Star, Contact,
 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import Avatar from "@/components/Avatar";
@@ -13,6 +13,7 @@ const items = [
   { to: "/admin/dashboard",    label: "Dashboard",    icon: LayoutDashboard, testid: "nav-dashboard",  permission: "view_dashboard", group: "overview" },
   { to: "/admin/productos",    label: "Productos",    icon: Package,         testid: "nav-products",   permission: "view_products",  group: "catalogo" },
   { to: "/admin/categorias",   label: "Categorías",   icon: FolderKanban,    testid: "nav-categories", permission: "view_categories", group: "catalogo" },
+  { to: "/admin/proveedores",  label: "Proveedores",  icon: Contact,         testid: "nav-suppliers",  permission: "view_suppliers", group: "catalogo" },
   { to: "/admin/resenas",      label: "Reseñas",      icon: Star,            testid: "nav-reviews",    permission: "view_reviews",   group: "catalogo" },
   { to: "/admin/movimientos",  label: "Movimientos",  icon: ArrowLeftRight,  testid: "nav-movements",  permission: "create_sale",    group: "operaciones" },
   { to: "/admin/kardex",       label: "Kárdex",       icon: FileText,        testid: "nav-kardex",     permission: "view_kardex",    group: "operaciones" },
@@ -43,7 +44,7 @@ export default function Layout() {
     navigate("/admin/login", { replace: true });
   };
 
-  const showFab = !["/admin/usuarios", "/admin/categorias", "/admin/kardex", "/admin/pedidos", "/admin/resenas"].some((p) => location.pathname.startsWith(p));
+  const showFab = !["/admin/usuarios", "/admin/categorias", "/admin/proveedores", "/admin/kardex", "/admin/pedidos", "/admin/resenas"].some((p) => location.pathname.startsWith(p));
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white relative">

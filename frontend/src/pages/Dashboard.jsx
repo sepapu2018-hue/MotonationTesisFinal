@@ -4,7 +4,7 @@ import api from "@/lib/api";
 import { Badge } from "@/components/ui-kit";
 import {
   Package, AlertTriangle, DollarSign, Activity, Bike, ShoppingBag, ArrowRight,
-  ArrowDownToLine, ArrowUpFromLine, TrendingUp, AlertCircle,
+  ArrowDownToLine, ArrowUpFromLine, ClipboardCheck, TrendingUp, AlertCircle,
 } from "lucide-react";
 
 // Pequeño helper para formatear $ con miles
@@ -153,26 +153,29 @@ export default function Dashboard() {
             {movs.length === 0 && (
               <div className="px-5 py-12 text-center text-zinc-500 text-sm">Sin movimientos aún</div>
             )}
-            {movs.map((m, idx) => (
-              <div
-                key={m.id}
-                className="grid grid-cols-[40px,1fr,auto,auto] items-center gap-4 px-5 py-3 border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors"
-              >
-                <div className={`h-9 w-9 flex items-center justify-center border ${m.type === "entrada" ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/5" : "border-amber-500/40 text-amber-400 bg-amber-500/5"}`}>
-                  {m.type === "entrada" ? <ArrowDownToLine className="h-4 w-4" /> : <ArrowUpFromLine className="h-4 w-4" />}
+            {movs.map((m) => {
+              const isIncrease = m.type === "entrada" || (m.type === "ajuste" && m.direction === "positivo");
+              return (
+                <div
+                  key={m.id}
+                  className="grid grid-cols-[40px,1fr,auto,auto] items-center gap-4 px-5 py-3 border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className={`h-9 w-9 flex items-center justify-center border ${isIncrease ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/5" : "border-amber-500/40 text-amber-400 bg-amber-500/5"}`}>
+                    {m.type === "ajuste" ? <ClipboardCheck className="h-4 w-4" /> : (isIncrease ? <ArrowDownToLine className="h-4 w-4" /> : <ArrowUpFromLine className="h-4 w-4" />)}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold truncate">{m.product_name}</div>
+                    <div className="text-[10px] text-zinc-500 font-mono uppercase">{m.product_sku} · {m.user_name}</div>
+                  </div>
+                  <div className={`timer text-2xl ${isIncrease ? "text-emerald-400" : "text-amber-400"}`}>
+                    {isIncrease ? "+" : "−"}{m.quantity}
+                  </div>
+                  <div className="text-[10px] text-zinc-500 font-mono uppercase w-20 text-right">
+                    {new Date(m.created_at).toLocaleString("es", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold truncate">{m.product_name}</div>
-                  <div className="text-[10px] text-zinc-500 font-mono uppercase">{m.product_sku} · {m.user_name}</div>
-                </div>
-                <div className={`timer text-2xl ${m.type === "entrada" ? "text-emerald-400" : "text-amber-400"}`}>
-                  {m.type === "entrada" ? "+" : "−"}{m.quantity}
-                </div>
-                <div className="text-[10px] text-zinc-500 font-mono uppercase w-20 text-right">
-                  {new Date(m.created_at).toLocaleString("es", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

@@ -12,6 +12,7 @@ const path = require('path');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const categoryRoutes = require('./routes/categories');
+const supplierRoutes = require('./routes/suppliers');
 const productRoutes = require('./routes/products');
 const movementRoutes = require('./routes/movements');
 const dashboardRoutes = require('./routes/dashboard');
@@ -49,6 +50,29 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// --- PROTECCIÓN CSRF (validación de Origin/Referer en mutaciones) ---
+// La sesión viaja en cookies httpOnly con SameSite=None en producción, así que
+// un <form> o fetch desde otro sitio también las adjuntaría. Como mitigación,
+// toda petición que cambia estado y trae Origin/Referer debe coincidir con
+// un origen permitido. Si no trae ninguno de los dos (clientes no-browser,
+// como Postman o llamadas servidor-a-servidor) se deja pasar: un ataque CSRF
+// real siempre parte de un navegador, que sí los envía.
+const mutatingMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+app.use((req, res, next) => {
+  if (!mutatingMethods.has(req.method)) return next();
+
+  let origin = req.headers.origin || null;
+  if (!origin && req.headers.referer) {
+    try { origin = new URL(req.headers.referer).origin; } catch { /* referer inválido, se ignora */ }
+  }
+  if (!origin) return next();
+
+  if (!allowedOrigins.includes(origin)) {
+    return res.status(403).json({ detail: 'Origen no permitido' });
+  }
+  next();
+});
+
 app.use(morgan('dev'));
 app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
@@ -70,6 +94,7 @@ safeRegister('/api/customer', customerRoutes, 'customerRoutes');
 safeRegister('/api/auth', authRoutes, 'authRoutes');
 safeRegister('/api/users', userRoutes, 'userRoutes');
 safeRegister('/api/categories', categoryRoutes, 'categoryRoutes');
+safeRegister('/api/suppliers', supplierRoutes, 'supplierRoutes');
 safeRegister('/api/products', productRoutes, 'productRoutes');
 safeRegister('/api/movements', movementRoutes, 'movementsRoutes');
 safeRegister('/api/dashboard', dashboardRoutes, 'dashboardRoutes');

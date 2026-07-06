@@ -11,6 +11,7 @@ const PERMISSION_OPTIONS = [
   { id: 'view_dashboard',  label: 'Ver Dashboard' },
   { id: 'view_products',   label: 'Ver Productos' },
   { id: 'view_categories', label: 'Ver Categorías' },
+  { id: 'view_suppliers',  label: 'Ver Proveedores' },
   { id: 'create_sale',     label: 'Registrar Ventas / Movimientos' },
   { id: 'view_kardex',     label: 'Ver Kárdex' },
   { id: 'view_orders',     label: 'Ver Pedidos' },

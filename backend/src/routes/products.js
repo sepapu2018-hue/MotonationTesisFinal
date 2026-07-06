@@ -32,8 +32,10 @@ const normalize = (p) => ({
 });
 
 // 1. LISTAR PRODUCTOS CON FILTROS DINÁMICOS
+// Retrocompatible: sin ?page devuelve el arreglo completo (lo usan los selectores
+// de Movimientos/Kárdex); con ?page se activa la paginación real para la tabla.
 router.get('/', asyncHandler(async (req, res) => {
-  const { q, type, category_id, low_stock } = req.query;
+  const { q, type, category_id, low_stock, page, page_size } = req.query;
   const where = [];
   const params = [];
 
@@ -54,9 +56,24 @@ router.get('/', asyncHandler(async (req, res) => {
     where.push(`stock <= min_stock`);
   }
 
-  const sql = `SELECT * FROM products ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY created_at DESC`;
-  const rows = await query(sql, params);
-  res.json(rows.map(normalize));
+  const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
+
+  if (!page) {
+    const sql = `SELECT * FROM products ${whereSql} ORDER BY created_at DESC`;
+    const rows = await query(sql, params);
+    return res.json(rows.map(normalize));
+  }
+
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, parseInt(page_size, 10) || 20));
+  const offset = (pageNum - 1) * pageSize;
+
+  const { total } = await one(`SELECT COUNT(*)::int AS total FROM products ${whereSql}`, params);
+
+  const dataSql = `SELECT * FROM products ${whereSql} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+  const rows = await query(dataSql, [...params, pageSize, offset]);
+
+  res.json({ data: rows.map(normalize), total, page: pageNum, pageSize });
 }));
 
 // 2. OBTENER UN PRODUCTO POR ID

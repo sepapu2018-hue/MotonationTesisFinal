@@ -66,7 +66,26 @@ ALTER TABLE movements ADD COLUMN IF NOT EXISTS unit_cost NUMERIC(12,2) NOT NULL 
 ALTER TABLE movements ADD COLUMN IF NOT EXISTS unit_price NUMERIC(12,2) NOT NULL DEFAULT 0;
 ALTER TABLE movements ADD COLUMN IF NOT EXISTS order_id UUID;
 ALTER TABLE movements DROP CONSTRAINT IF EXISTS movements_type_check;
-ALTER TABLE movements ADD CONSTRAINT movements_type_check CHECK (type IN ('entrada', 'salida', 'venta'));
+ALTER TABLE movements ADD CONSTRAINT movements_type_check CHECK (type IN ('entrada', 'salida', 'venta', 'ajuste'));
+
+-- Ajuste de inventario por conteo físico: 'quantity' guarda la magnitud del ajuste
+-- (siempre > 0, por el CHECK de arriba) y 'direction' indica si sube o baja el stock.
+ALTER TABLE movements ADD COLUMN IF NOT EXISTS direction TEXT;
+ALTER TABLE movements DROP CONSTRAINT IF EXISTS movements_direction_check;
+ALTER TABLE movements ADD CONSTRAINT movements_direction_check CHECK (direction IS NULL OR direction IN ('positivo', 'negativo'));
+
+CREATE TABLE IF NOT EXISTS suppliers (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name       TEXT NOT NULL UNIQUE,
+  contact    TEXT NOT NULL DEFAULT '',
+  phone      TEXT NOT NULL DEFAULT '',
+  email      TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Entradas de stock pueden ligarse opcionalmente al proveedor que las surtió
+ALTER TABLE movements ADD COLUMN IF NOT EXISTS supplier_id UUID REFERENCES suppliers(id) ON DELETE SET NULL;
+ALTER TABLE movements ADD COLUMN IF NOT EXISTS supplier_name TEXT NOT NULL DEFAULT '';
 
 CREATE TABLE IF NOT EXISTS customers (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),

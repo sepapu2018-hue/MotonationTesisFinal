@@ -3,14 +3,17 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { PrimaryButton, GhostButton, Field, inputClass, Badge } from "@/components/ui-kit";
-import { ArrowDownToLine, ArrowUpFromLine, Plus, X, Activity, Loader2 } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Plus, X, Activity, Loader2, ClipboardCheck } from "lucide-react";
+
+const emptyForm = { product_id: "", type: "entrada", quantity: 1, reason: "", direction: "positivo", supplier_id: "" };
 
 export default function Movements() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [movs, setMovs] = useState([]);
   const [products, setProducts] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ product_id: "", type: "entrada", quantity: 1, reason: "" });
+  const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -19,6 +22,7 @@ export default function Movements() {
   useEffect(() => {
     load();
     api.get("/products").then((r) => setProducts(r.data)).catch((err) => toast.error(formatApiError(err)));
+    api.get("/suppliers").then((r) => setSuppliers(r.data)).catch((err) => toast.error(formatApiError(err)));
   }, []);
 
   useEffect(() => {
@@ -35,23 +39,26 @@ export default function Movements() {
     setError("");
     setSubmitting(true);
     try {
-      await api.post("/movements", { ...form, quantity: Number(form.quantity) });
+      const payload = { product_id: form.product_id, type: form.type, quantity: Number(form.quantity), reason: form.reason };
+      if (form.type === "ajuste") payload.direction = form.direction;
+      if (form.type === "entrada" && form.supplier_id) payload.supplier_id = form.supplier_id;
+      await api.post("/movements", payload);
       setShowForm(false);
-      setForm({ product_id: "", type: "entrada", quantity: 1, reason: "" });
+      setForm(emptyForm);
       load();
       api.get("/products").then((r) => setProducts(r.data)).catch((err) => toast.error(formatApiError(err)));
     } catch (err) {
-      setError(formatApiError(err)); 
-    } finally { 
-      setSubmitting(false); 
+      setError(formatApiError(err));
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const stats = useMemo(() => {
     const since = Date.now() - 24 * 60 * 60 * 1000;
     const recent = movs.filter((m) => new Date(m.created_at).getTime() >= since);
-    const ent = recent.filter((m) => m.type === "entrada").reduce((s, m) => s + m.quantity, 0);
-    const sal = recent.filter((m) => m.type === "salida" || m.type === "venta").reduce((s, m) => s + m.quantity, 0);
+    const ent = recent.filter((m) => m.type === "entrada" || (m.type === "ajuste" && m.direction === "positivo")).reduce((s, m) => s + m.quantity, 0);
+    const sal = recent.filter((m) => m.type === "salida" || m.type === "venta" || (m.type === "ajuste" && m.direction === "negativo")).reduce((s, m) => s + m.quantity, 0);
     return { recent: recent.length, ent, sal, total: movs.length };
   }, [movs]);
 
@@ -110,24 +117,34 @@ export default function Movements() {
                 </tr>
               </thead>
               <tbody>
-                {movs.map((m) => (
-                  <tr key={m.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-zinc-400">{new Date(m.created_at).toLocaleString("es")}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant={m.type === "entrada" ? "success" : "danger"}>
-                        {m.type === "entrada" ? <ArrowDownToLine className="h-3 w-3 inline mr-1" /> : <ArrowUpFromLine className="h-3 w-3 inline mr-1" />}
-                        {m.type}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">{m.product_name}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-zinc-400">{m.product_sku}</td>
-                    <td className={`px-4 py-3 text-right timer text-xl ${m.type === "entrada" ? "text-emerald-400" : "text-amber-400"}`}>
-                      {m.type === "entrada" ? "+" : "−"}{m.quantity}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-300">{m.reason || "—"}</td>
-                    <td className="px-4 py-3 text-zinc-400">{m.user_name}</td>
-                  </tr>
-                ))}
+                {movs.map((m) => {
+                  const isIncrease = m.type === "entrada" || (m.type === "ajuste" && m.direction === "positivo");
+                  const badgeVariant = m.type === "ajuste" ? "info" : (m.type === "entrada" ? "success" : "danger");
+                  const label = m.type === "ajuste" ? `ajuste ${m.direction === "positivo" ? "(+)" : "(−)"}` : m.type;
+                  return (
+                    <tr key={m.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                      <td className="px-4 py-3 font-mono text-xs text-zinc-400">{new Date(m.created_at).toLocaleString("es")}</td>
+                      <td className="px-4 py-3">
+                        <Badge variant={badgeVariant}>
+                          {m.type === "ajuste"
+                            ? <ClipboardCheck className="h-3 w-3 inline mr-1" />
+                            : (isIncrease ? <ArrowDownToLine className="h-3 w-3 inline mr-1" /> : <ArrowUpFromLine className="h-3 w-3 inline mr-1" />)}
+                          {label}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        {m.product_name}
+                        {m.supplier_name && <div className="text-xs text-zinc-500">Proveedor: {m.supplier_name}</div>}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-zinc-400">{m.product_sku}</td>
+                      <td className={`px-4 py-3 text-right timer text-xl ${isIncrease ? "text-emerald-400" : "text-amber-400"}`}>
+                        {isIncrease ? "+" : "−"}{m.quantity}
+                      </td>
+                      <td className="px-4 py-3 text-zinc-300">{m.reason || "—"}</td>
+                      <td className="px-4 py-3 text-zinc-400">{m.user_name}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -153,15 +170,43 @@ export default function Movements() {
                 </select>
               </Field>
               <Field label="Tipo">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button type="button" onClick={() => setForm({ ...form, type: "entrada" })}
                     className={`py-2 text-xs font-bold uppercase ${form.type === "entrada" ? "bg-emerald-500/20 border-emerald-500 text-emerald-400" : "border-white/15 text-zinc-400"} border`}>Entrada</button>
                   <button type="button" onClick={() => setForm({ ...form, type: "salida" })}
                     className={`py-2 text-xs font-bold uppercase ${form.type === "salida" ? "bg-amber-500/20 border-amber-500 text-amber-400" : "border-white/15 text-zinc-400"} border`}>Salida</button>
+                  <button type="button" onClick={() => setForm({ ...form, type: "ajuste" })}
+                    className={`py-2 text-xs font-bold uppercase ${form.type === "ajuste" ? "bg-sky-500/20 border-sky-500 text-sky-400" : "border-white/15 text-zinc-400"} border`}>Ajuste</button>
                 </div>
               </Field>
+              {form.type === "ajuste" && (
+                <Field label="Dirección del ajuste">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => setForm({ ...form, direction: "positivo" })}
+                      className={`py-2 text-xs font-bold uppercase ${form.direction === "positivo" ? "bg-emerald-500/20 border-emerald-500 text-emerald-400" : "border-white/15 text-zinc-400"} border`}>Sube stock (+)</button>
+                    <button type="button" onClick={() => setForm({ ...form, direction: "negativo" })}
+                      className={`py-2 text-xs font-bold uppercase ${form.direction === "negativo" ? "bg-amber-500/20 border-amber-500 text-amber-400" : "border-white/15 text-zinc-400"} border`}>Baja stock (−)</button>
+                  </div>
+                </Field>
+              )}
+              {form.type === "entrada" && (
+                <Field label="Proveedor (opcional)">
+                  <select value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })} className={inputClass()}>
+                    <option value="">— Sin proveedor —</option>
+                    {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </Field>
+              )}
               <Field label="Cantidad"><input type="number" min="1" required value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} className={inputClass()} /></Field>
-              <Field label="Motivo"><input value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} className={inputClass()} placeholder="Ej: Ajuste de inventario" /></Field>
+              <Field label="Motivo">
+                <input
+                  value={form.reason}
+                  onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                  className={inputClass()}
+                  required={form.type === "ajuste"}
+                  placeholder={form.type === "ajuste" ? "Ej: Conteo físico detectó faltante en bodega" : "Ej: Compra a proveedor"}
+                />
+              </Field>
             </div>
 
             {error && <div className="mt-4 border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</div>}

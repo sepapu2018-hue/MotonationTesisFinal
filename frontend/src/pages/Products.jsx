@@ -5,7 +5,9 @@ import api, { formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { PrimaryButton, GhostButton, Field, inputClass, Badge } from "@/components/ui-kit";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { Plus, Search, Edit2, Trash2, X, Package, Filter } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, X, Package, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+
+const PAGE_SIZE = 20;
 
 const empty = {
   sku: "", name: "", type: "motocicleta", brand: "", model: "",
@@ -20,6 +22,8 @@ export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [cats, setCats] = useState([]);
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -32,17 +36,20 @@ export default function Products() {
 
   const load = useCallback(async () => {
     try {
-      const params = {};
+      const params = { page, page_size: PAGE_SIZE };
       if (q) params.q = q;
       if (typeFilter) params.type = typeFilter;
       const { data } = await api.get("/products", { params });
-      setItems(data);
+      setItems(data.data);
+      setTotal(data.total);
     } catch (err) {
       toast.error(formatApiError(err));
     }
-  }, [q, typeFilter]);
+  }, [q, typeFilter, page]);
 
   useEffect(() => { load(); }, [load]);
+  // Vuelve a la página 1 cuando cambian los filtros de búsqueda/tipo
+  useEffect(() => { setPage(1); }, [q, typeFilter]);
   useEffect(() => { api.get("/categories").then((r) => setCats(r.data)).catch((err) => toast.error(formatApiError(err))); }, []);
 
   // Soporte para FAB: ?new=1 abre el modal automáticamente
@@ -120,7 +127,7 @@ export default function Products() {
           <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-2">// Inventario · Catálogo</div>
           <h1 className="font-display font-black text-5xl uppercase leading-none tracking-tight flex items-end gap-3">
             Productos
-            <span className="timer text-2xl text-zinc-600">[{String(items.length).padStart(3, "0")}]</span>
+            <span className="timer text-2xl text-zinc-600">[{String(total).padStart(3, "0")}]</span>
           </h1>
         </div>
         {isAdmin && (
@@ -218,6 +225,34 @@ export default function Products() {
               </tbody>
             </table>
           </div>
+
+          {total > PAGE_SIZE && (
+            <div className="flex items-center justify-between gap-4 px-4 py-3 border-t border-white/10 text-sm" data-testid="pagination">
+              <span className="text-zinc-500 text-xs">
+                Página {page} de {Math.max(1, Math.ceil(total / PAGE_SIZE))} · {total} productos
+              </span>
+              <div className="flex gap-2">
+                <GhostButton
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  testid="prev-page"
+                  className="px-3 py-1.5"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </GhostButton>
+                <GhostButton
+                  type="button"
+                  onClick={() => setPage((p) => (p * PAGE_SIZE < total ? p + 1 : p))}
+                  disabled={page * PAGE_SIZE >= total}
+                  testid="next-page"
+                  className="px-3 py-1.5"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </GhostButton>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Lateral asimétrico — contexto del filtro actual */}

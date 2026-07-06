@@ -12,7 +12,7 @@ router.get('/:productId', asyncHandler(async (req, res) => {
   if (!product) throw httpError(404, 'Producto no encontrado');
 
   const rows = await query(
-    `SELECT id, type, quantity, unit_cost, unit_price, reason, user_name, order_id, created_at
+    `SELECT id, type, quantity, unit_cost, unit_price, reason, user_name, order_id, created_at, direction, supplier_name
      FROM movements
      WHERE product_id = $1
      ORDER BY created_at ASC`,
@@ -23,7 +23,8 @@ router.get('/:productId', asyncHandler(async (req, res) => {
   let avgCost = 0;
 
   const enriched = rows.map((m) => {
-    const qty = m.type === 'entrada' ? m.quantity : -m.quantity;
+    const isIncrease = m.type === 'entrada' || (m.type === 'ajuste' && m.direction === 'positivo');
+    const qty = isIncrease ? m.quantity : -m.quantity;
     const previousBalance = balance;
     balance += qty;
 

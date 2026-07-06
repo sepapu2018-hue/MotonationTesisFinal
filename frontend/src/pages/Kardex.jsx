@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { Search, FileText, ArrowDownToLine, ArrowUpFromLine, ShoppingCart, Download, Printer } from "lucide-react";
+import { Search, FileText, ArrowDownToLine, ArrowUpFromLine, ShoppingCart, ClipboardCheck, Download, Printer } from "lucide-react";
 
 const money = (n) => `$${Number(n || 0).toLocaleString("es", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
 
@@ -11,6 +11,20 @@ const TYPE_META = {
   entrada: { l: "Entrada", icon: ArrowDownToLine, c: "text-emerald-400 border-emerald-500/40 bg-emerald-500/5", sign: "+" },
   salida: { l: "Salida", icon: ArrowUpFromLine, c: "text-amber-400 border-amber-500/40 bg-amber-500/5", sign: "−" },
   venta: { l: "Venta", icon: ShoppingCart, c: "text-sky-400 border-sky-500/40 bg-sky-500/5", sign: "−" },
+};
+
+// El ajuste no tiene un signo fijo: depende de la dirección (conteo físico +/-)
+const metaFor = (entry) => {
+  if (entry.type === "ajuste") {
+    const positive = entry.direction === "positivo";
+    return {
+      l: `Ajuste (${positive ? "+" : "−"})`,
+      icon: ClipboardCheck,
+      c: "text-sky-400 border-sky-500/40 bg-sky-500/5",
+      sign: positive ? "+" : "−",
+    };
+  }
+  return TYPE_META[entry.type] || TYPE_META.entrada;
 };
 
 export default function Kardex() {
@@ -82,17 +96,20 @@ export default function Kardex() {
     });
 
     // Tabla de Movimientos
-    const rows = data.entries.map((e) => [
-      new Date(e.created_at).toLocaleDateString("es"),
-      e.type.toUpperCase(),
-      (e.reason || "—"),
-      (e.type === "entrada" ? "+" : "−") + e.quantity,
-      money(e.unit_cost),
-      money(e.unit_price),
-      String(e.balance),
-      money(e.avg_cost),
-      money(e.balance_value),
-    ]);
+    const rows = data.entries.map((e) => {
+      const meta = metaFor(e);
+      return [
+        new Date(e.created_at).toLocaleDateString("es"),
+        meta.l.toUpperCase(),
+        (e.reason || "—"),
+        meta.sign + e.quantity,
+        money(e.unit_cost),
+        money(e.unit_price),
+        String(e.balance),
+        money(e.avg_cost),
+        money(e.balance_value),
+      ];
+    });
 
     autoTable(doc, {
       startY: 140,
@@ -113,7 +130,11 @@ export default function Kardex() {
       },
       didParseCell: (d) => {
         if (d.section === "body" && d.column.index === 1) {
-          d.cell.styles.textColor = d.cell.raw === "ENTRADA" ? [16, 185, 129] : d.cell.raw === "VENTA" ? [2, 132, 199] : [245, 158, 11];
+          const raw = String(d.cell.raw);
+          d.cell.styles.textColor = raw.startsWith("ENTRADA") ? [16, 185, 129]
+            : raw.startsWith("VENTA") ? [2, 132, 199]
+            : raw.startsWith("AJUSTE") ? [56, 189, 248]
+            : [245, 158, 11];
         }
       },
       didDrawPage: (d) => {
@@ -224,7 +245,7 @@ export default function Kardex() {
                   </thead>
                   <tbody>
                     {data.entries.map((e) => {
-                      const meta = TYPE_META[e.type] || TYPE_META.entrada;
+                      const meta = metaFor(e);
                       const Icon = meta.icon;
                       return (
                         <tr key={e.id} className="border-b border-white/5 hover:bg-white/[0.02]">
