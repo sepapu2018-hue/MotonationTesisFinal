@@ -66,6 +66,10 @@ CREATE INDEX IF NOT EXISTS idx_products_type ON products(type);
 
 ALTER TABLE products ADD COLUMN IF NOT EXISTS cost NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (cost >= 0);
 ALTER TABLE products ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT TRUE;
+-- Ficha técnica: pares clave/valor libres (ej. "Cilindraje": "150cc") para no atarse a un set fijo de campos
+ALTER TABLE products ADD COLUMN IF NOT EXISTS specs JSONB NOT NULL DEFAULT '{}'::jsonb;
+-- Galería adicional (image_url sigue siendo la imagen principal/portada)
+ALTER TABLE products ADD COLUMN IF NOT EXISTS images JSONB NOT NULL DEFAULT '[]'::jsonb;
 
 CREATE TABLE IF NOT EXISTS movements (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -176,3 +180,21 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at   TIMESTAMP NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_reviews_published ON reviews(is_published);
+
+-- Reseñas de producto (separadas del cap de 3 testimonios generales de la Home,
+-- que solo aplica a las reseñas con product_id NULL).
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS product_id UUID REFERENCES products(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_reviews_product ON reviews(product_id);
+
+-- Registro de auditoría de acciones administrativas (quién hizo qué, sobre qué)
+CREATE TABLE IF NOT EXISTS audit_log (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID REFERENCES users(id) ON DELETE SET NULL,
+  user_name   TEXT NOT NULL,
+  action      TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id   TEXT NOT NULL DEFAULT '',
+  details     JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_audit_log_date ON audit_log(created_at DESC);

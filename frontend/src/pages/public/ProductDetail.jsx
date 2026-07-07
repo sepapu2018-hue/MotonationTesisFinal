@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import api from "@/lib/api";
+import { toast } from "sonner";
+import api, { formatApiError } from "@/lib/api";
 import { useCart } from "@/context/CartContext";
-import { ShoppingCart, ArrowLeft, Check, Minus, Plus, Package, Shield, Truck } from "lucide-react";
+import { ShoppingCart, ArrowLeft, Check, Minus, Plus, Package, Shield, Truck, Star, MapPin, Quote } from "lucide-react";
 
 const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits: 0 })}`;
 
@@ -13,17 +14,43 @@ export default function ProductDetail() {
   const [product, setProduct] = useState(null);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [activeImage, setActiveImage] = useState(0);
+
+  const [reviews, setReviews] = useState([]);
+  const [reviewForm, setReviewForm] = useState({ name: "", city: "", rating: 5, text: "" });
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
+    setProduct(null);
     api.get(`/public/products/${sku}`)
-      .then((r) => setProduct(r.data))
+      .then((r) => { setProduct(r.data); setActiveImage(0); })
       .catch(() => setProduct(false));
+    api.get(`/public/products/${sku}/reviews`)
+      .then((r) => setReviews(r.data))
+      .catch(() => setReviews([]));
   }, [sku]);
 
   const onAdd = () => {
     addItem(product, qty);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
+  };
+
+  const submitReview = (e) => {
+    e.preventDefault();
+    if (!reviewForm.name.trim() || !reviewForm.city.trim() || !reviewForm.text.trim()) {
+      toast.error("Completá nombre, ciudad y comentario");
+      return;
+    }
+    setSubmittingReview(true);
+    api.post(`/public/products/${sku}/reviews`, reviewForm)
+      .then((r) => {
+        setReviews((prev) => [r.data, ...prev]);
+        setReviewForm({ name: "", city: "", rating: 5, text: "" });
+        toast.success("¡Gracias por tu reseña!");
+      })
+      .catch((err) => toast.error(formatApiError(err)))
+      .finally(() => setSubmittingReview(false));
   };
 
   if (product === null) {
@@ -40,6 +67,9 @@ export default function ProductDetail() {
     );
   }
 
+  const gallery = [product.image_url, ...(product.images || [])].filter(Boolean);
+  const specsEntries = Object.entries(product.specs || {});
+
   return (
     <div className="max-w-[1400px] mx-auto px-6 py-10">
       <button
@@ -50,9 +80,25 @@ export default function ProductDetail() {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-[#0E0E0E] border border-white/10 aspect-square overflow-hidden">
-          {product.image_url && (
-            <img src={product.image_url} alt={product.name} className="w-full h-full object-cover fade-up" />
+        <div>
+          <div className="bg-[#0E0E0E] border border-white/10 aspect-square overflow-hidden">
+            {gallery[activeImage] && (
+              <img src={gallery[activeImage]} alt={product.name} className="w-full h-full object-cover fade-up" />
+            )}
+          </div>
+          {gallery.length > 1 && (
+            <div className="flex gap-2 mt-3">
+              {gallery.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveImage(i)}
+                  data-testid={`product-thumb-${i}`}
+                  className={`h-16 w-16 border overflow-hidden shrink-0 transition-colors ${activeImage === i ? "border-[#10B981]" : "border-white/10 hover:border-white/30"}`}
+                >
+                  <img src={img} alt="" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
           )}
         </div>
 
@@ -125,6 +171,128 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      {specsEntries.length > 0 && (
+        <section className="mt-16">
+          <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-4">// Ficha técnica</div>
+          <div className="border border-white/10 bg-[#0E0E0E] divide-y divide-white/5">
+            {specsEntries.map(([key, value]) => (
+              <div key={key} className="grid grid-cols-2 px-5 py-3 text-sm">
+                <span className="text-zinc-500">{key}</span>
+                <span className="text-zinc-200">{value}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {product.related_products?.length > 0 && (
+        <section className="mt-16">
+          <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-4">// Productos relacionados</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {product.related_products.map((r) => (
+              <Link
+                key={r.id}
+                to={`/producto/${r.sku}`}
+                className="group border border-white/10 bg-[#0E0E0E] hover:border-[#10B981] transition-colors overflow-hidden"
+              >
+                <div className="aspect-square bg-black overflow-hidden">
+                  {r.image_url && (
+                    <img src={r.image_url} alt={r.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  )}
+                </div>
+                <div className="p-3">
+                  <div className="text-[10px] uppercase tracking-widest text-zinc-500">{r.brand}</div>
+                  <div className="font-display font-bold text-sm uppercase mt-0.5 line-clamp-1">{r.name}</div>
+                  <div className="timer text-lg text-[#10B981] mt-1">{money(r.price)}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="mt-16">
+        <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-4">
+          // Reseñas {reviews.length > 0 && `(${reviews.length})`}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          <div className="flex flex-col gap-4">
+            {reviews.length === 0 && (
+              <div className="text-center text-zinc-500 text-sm py-10 border border-white/10 bg-[#0E0E0E]">
+                Todavía no hay reseñas de este producto. ¡Sé el primero!
+              </div>
+            )}
+            {reviews.map((r, i) => (
+              <div key={r.id} data-testid={`product-review-${i}`} className="border border-white/10 bg-[#0E0E0E] p-6">
+                <Quote className="h-6 w-6 text-[#10B981]/30 mb-3" />
+                <p className="text-zinc-300 leading-relaxed text-sm">"{r.text}"</p>
+                <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+                  <div>
+                    <div className="font-display font-bold uppercase text-sm">{r.name}</div>
+                    <div className="flex items-center gap-1 text-[10px] text-zinc-500 mt-0.5">
+                      <MapPin className="h-2.5 w-2.5" /> {r.city}
+                    </div>
+                  </div>
+                  <div className="flex">
+                    {[...Array(r.rating)].map((_, j) => <Star key={j} className="h-3.5 w-3.5 fill-[#F59E0B] text-[#F59E0B]" />)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="border border-white/10 bg-[#0E0E0E] p-6">
+            <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-4">// Dejá tu reseña</div>
+            <form onSubmit={submitReview} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="Tu nombre"
+                  value={reviewForm.name}
+                  onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })}
+                  className="bg-black border border-white/15 focus:border-[#10B981] outline-none px-4 py-3 text-sm"
+                  data-testid="product-review-name"
+                />
+                <input
+                  type="text"
+                  placeholder="Tu ciudad"
+                  value={reviewForm.city}
+                  onChange={(e) => setReviewForm({ ...reviewForm, city: e.target.value })}
+                  className="bg-black border border-white/15 focus:border-[#10B981] outline-none px-4 py-3 text-sm"
+                  data-testid="product-review-city"
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs uppercase tracking-widest text-zinc-500">Calificación</span>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button key={n} type="button" onClick={() => setReviewForm({ ...reviewForm, rating: n })} data-testid={`product-review-star-${n}`}>
+                      <Star className={`h-5 w-5 ${n <= reviewForm.rating ? "fill-[#F59E0B] text-[#F59E0B]" : "text-zinc-600"}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <textarea
+                placeholder="Contanos tu experiencia con este producto..."
+                value={reviewForm.text}
+                onChange={(e) => setReviewForm({ ...reviewForm, text: e.target.value })}
+                rows={3}
+                className="w-full bg-black border border-white/15 focus:border-[#10B981] outline-none px-4 py-3 text-sm resize-none"
+                data-testid="product-review-text"
+              />
+              <button
+                type="submit"
+                disabled={submittingReview}
+                data-testid="product-review-submit"
+                className="w-full bg-[#10B981] hover:bg-[#34D399] disabled:opacity-60 text-black font-display uppercase tracking-widest font-black py-3 transition-colors"
+              >
+                {submittingReview ? "Enviando..." : "Publicar reseña"}
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

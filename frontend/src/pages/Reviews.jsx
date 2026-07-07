@@ -32,7 +32,7 @@ export default function Reviews() {
     <div className="max-w-[1200px] mx-auto px-6 py-8">
       <PageHeader kicker="Tienda" title="Reseñas" testid="reviews-header" count={reviews.length} />
       <p className="text-xs text-zinc-500 -mt-4 mb-6">
-        La Home solo muestra las 3 reseñas más recientes; las anteriores se borran automáticamente al llegar una nueva.
+        Los testimonios generales de la Home solo muestran los 3 más recientes (las anteriores se borran automáticamente). Las reseñas ligadas a un producto no tienen ese límite.
       </p>
 
       <Card>
@@ -42,6 +42,7 @@ export default function Reviews() {
               <tr className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold text-left">
                 <th className="px-4 py-3">Nombre</th>
                 <th className="px-4 py-3">Ciudad</th>
+                <th className="px-4 py-3">Producto</th>
                 <th className="px-4 py-3">Calificación</th>
                 <th className="px-4 py-3">Comentario</th>
                 <th className="px-4 py-3">Fecha</th>
@@ -53,6 +54,9 @@ export default function Reviews() {
                 <tr key={r.id} className="border-b border-white/5">
                   <td className="px-4 py-3 font-semibold whitespace-nowrap">{r.name}</td>
                   <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">{r.city}</td>
+                  <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">
+                    {r.product_name || <span className="text-zinc-600">— General —</span>}
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="inline-flex items-center gap-0.5 text-amber-400">
                       {Array.from({ length: 5 }).map((_, i) => (
@@ -73,7 +77,7 @@ export default function Reviews() {
               ))}
               {reviews.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-zinc-600 text-xs uppercase tracking-widest">
+                  <td colSpan={7} className="px-4 py-10 text-center text-zinc-600 text-xs uppercase tracking-widest">
                     Sin reseñas registradas
                   </td>
                 </tr>

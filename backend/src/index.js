@@ -21,6 +21,8 @@ const publicRoutes = require('./routes/public');
 const customerRoutes = require('./routes/customer');
 const orderRoutes = require('./routes/orders');
 const reviewRoutes = require('./routes/reviews');
+const auditRoutes = require('./routes/audit');
+const reportRoutes = require('./routes/reports');
 
 const { errorHandler } = require('./middleware/errorHandler');
 const { pool } = require('./config/db');
@@ -101,6 +103,8 @@ safeRegister('/api/dashboard', dashboardRoutes, 'dashboardRoutes');
 safeRegister('/api/kardex', kardexRoutes, 'kardexRoutes');
 safeRegister('/api/orders', orderRoutes, 'orderRoutes');
 safeRegister('/api/reviews', reviewRoutes, 'reviewRoutes');
+safeRegister('/api/audit-log', auditRoutes, 'auditRoutes');
+safeRegister('/api/reports', reportRoutes, 'reportRoutes');
 
 app.use('/api/*', (req, res) => res.status(404).json({ detail: 'Ruta no encontrada' }));
 app.use(errorHandler);

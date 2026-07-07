@@ -9,10 +9,11 @@ import { Plus, Search, Edit2, Trash2, X, Package, Filter, ChevronLeft, ChevronRi
 
 const PAGE_SIZE = 20;
 const MAX_IMAGE_DATA_URL_LENGTH = 1.5 * 1024 * 1024; // ~1.5MB en base64, generoso tras comprimir
+const MAX_GALLERY_IMAGES = 6;
 
 const empty = {
   sku: "", name: "", type: "motocicleta", brand: "", model: "",
-  category_id: "", price: 0, stock: 0, min_stock: 5, image_url: "", description: "",
+  category_id: "", price: 0, stock: 0, min_stock: 5, image_url: "", images: [], description: "",
 };
 
 const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits: 0 })}`;
@@ -62,6 +63,8 @@ export default function Products() {
   const [form, setForm] = useState(empty);
   const [error, setError] = useState("");
   const [imageError, setImageError] = useState("");
+  const [galleryError, setGalleryError] = useState("");
+  const [specsList, setSpecsList] = useState([]);
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -96,15 +99,19 @@ export default function Products() {
   const openCreate = () => {
     setEditing(null);
     setForm({ ...empty, category_id: cats[0]?.id || "" });
+    setSpecsList([]);
     setError("");
     setImageError("");
+    setGalleryError("");
     setShowForm(true);
   };
   const openEdit = (p) => {
     setEditing(p);
-    setForm({ ...p });
+    setForm({ ...p, images: p.images || [] });
+    setSpecsList(Object.entries(p.specs || {}).map(([key, value]) => ({ key, value })));
     setError("");
     setImageError("");
+    setGalleryError("");
     setShowForm(true);
   };
 
@@ -135,15 +142,54 @@ export default function Products() {
     }
   };
 
+  const handleGalleryFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setGalleryError("El archivo debe ser una imagen");
+      return;
+    }
+    if (form.images.length >= MAX_GALLERY_IMAGES) {
+      setGalleryError(`Máximo ${MAX_GALLERY_IMAGES} imágenes en la galería`);
+      return;
+    }
+    setGalleryError("");
+    try {
+      const dataUrl = await fileToCompressedDataUrl(file);
+      if (dataUrl.length > MAX_IMAGE_DATA_URL_LENGTH) {
+        setGalleryError("La imagen es muy grande incluso comprimida, probá con otra");
+        return;
+      }
+      setForm((f) => ({ ...f, images: [...f.images, dataUrl] }));
+    } catch (err) {
+      setGalleryError(err.message);
+    }
+  };
+
+  const removeGalleryImage = (idx) => {
+    setForm((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
+  };
+
+  const addSpecRow = () => setSpecsList((list) => [...list, { key: "", value: "" }]);
+  const updateSpecRow = (idx, field, val) => {
+    setSpecsList((list) => list.map((s, i) => (i === idx ? { ...s, [field]: val } : s)));
+  };
+  const removeSpecRow = (idx) => setSpecsList((list) => list.filter((_, i) => i !== idx));
+
   const save = async (e) => {
     e.preventDefault();
     setError("");
     try {
+      const specs = Object.fromEntries(
+        specsList.filter((s) => s.key.trim()).map((s) => [s.key.trim(), s.value])
+      );
       const payload = {
         ...form,
         price: Number(form.price),
         stock: Number(form.stock),
         min_stock: Number(form.min_stock),
+        specs,
       };
       if (editing) await api.put(`/products/${editing.id}`, payload);
       else await api.post("/products", payload);
@@ -428,6 +474,70 @@ export default function Products() {
                   </div>
                 </Field>
               </div>
+
+              <div className="col-span-2">
+                <Field label={`Galería adicional (${form.images.length}/${MAX_GALLERY_IMAGES})`}>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {form.images.map((img, idx) => (
+                      <div key={idx} className="relative h-16 w-16 border border-white/10 bg-black/30 overflow-hidden group">
+                        <img src={img} alt="" className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeGalleryImage(idx)}
+                          className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                          data-testid={`gallery-remove-${idx}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    {form.images.length < MAX_GALLERY_IMAGES && (
+                      <label className="h-16 w-16 border border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:border-[#10B981] text-zinc-500 hover:text-[#10B981] transition-colors">
+                        <Plus className="h-5 w-5" />
+                        <input type="file" accept="image/*" onChange={handleGalleryFile} className="hidden" data-testid="form-gallery-file" />
+                      </label>
+                    )}
+                  </div>
+                  {galleryError && <div className="text-xs text-amber-400 mt-2">{galleryError}</div>}
+                </Field>
+              </div>
+
+              <div className="col-span-2">
+                <Field label="Ficha técnica">
+                  <div className="space-y-2">
+                    {specsList.map((s, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <input
+                          value={s.key}
+                          onChange={(e) => updateSpecRow(idx, "key", e.target.value)}
+                          placeholder="Ej: Cilindraje"
+                          className={inputClass() + " flex-1"}
+                          data-testid={`spec-key-${idx}`}
+                        />
+                        <input
+                          value={s.value}
+                          onChange={(e) => updateSpecRow(idx, "value", e.target.value)}
+                          placeholder="Ej: 150cc"
+                          className={inputClass() + " flex-1"}
+                          data-testid={`spec-value-${idx}`}
+                        />
+                        <button type="button" onClick={() => removeSpecRow(idx)} className="p-2 text-zinc-500 hover:text-red-400" data-testid={`spec-remove-${idx}`}>
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={addSpecRow}
+                      className="text-xs font-bold uppercase tracking-widest text-[#10B981] hover:underline flex items-center gap-1"
+                      data-testid="add-spec-row"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Agregar especificación
+                    </button>
+                  </div>
+                </Field>
+              </div>
+
               <div className="col-span-2">
                 <Field label="Descripción"><textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={inputClass()} /></Field>
               </div>

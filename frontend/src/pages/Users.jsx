@@ -17,6 +17,7 @@ const PERMISSION_OPTIONS = [
   { id: 'view_orders',     label: 'Ver Pedidos' },
   { id: 'view_reviews',    label: 'Ver Reseñas' },
   { id: 'view_alerts',     label: 'Ver Alertas' },
+  { id: 'view_reports',    label: 'Ver Reportes' },
 ];
 
 // Convierte un archivo a base64 (data URL). Limita a 800KB.

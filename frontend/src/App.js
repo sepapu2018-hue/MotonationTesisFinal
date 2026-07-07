@@ -22,6 +22,8 @@ import Users from "@/pages/Users";
 import Kardex from "@/pages/Kardex";
 import Orders from "@/pages/Orders";
 import Reviews from "@/pages/Reviews";
+import AuditLog from "@/pages/AuditLog";
+import Reports from "@/pages/Reports";
 
 // Public pages
 import Home from "@/pages/public/Home";
@@ -75,7 +77,9 @@ function App() {
                   <Route path="pedidos" element={<Orders />} />
                   <Route path="resenas" element={<Reviews />} />
                   <Route path="alertas" element={<Alerts />} />
+                  <Route path="reportes" element={<Reports />} />
                   <Route path="usuarios" element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
+                  <Route path="auditoria" element={<ProtectedRoute adminOnly><AuditLog /></ProtectedRoute>} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />

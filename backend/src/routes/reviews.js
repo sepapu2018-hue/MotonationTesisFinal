@@ -10,9 +10,11 @@ router.use(authRequired);
 
 router.get('/', asyncHandler(async (req, res) => {
   const rows = await query(`
-    SELECT id, name, city, rating, text, is_published, created_at
-    FROM reviews
-    ORDER BY created_at DESC
+    SELECT r.id, r.name, r.city, r.rating, r.text, r.is_published, r.created_at,
+           r.product_id, p.name AS product_name
+    FROM reviews r
+    LEFT JOIN products p ON p.id = r.product_id
+    ORDER BY r.created_at DESC
   `);
   res.json(rows);
 }));

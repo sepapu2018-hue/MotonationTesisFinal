@@ -11,15 +11,28 @@ export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [cats, setCats] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState(searchParams.get("q") || "");
   const [debouncedQ, setDebouncedQ] = useState(q);
+  const [minPrice, setMinPrice] = useState(searchParams.get("min_price") || "");
+  const [maxPrice, setMaxPrice] = useState(searchParams.get("max_price") || "");
+  const [debouncedPrice, setDebouncedPrice] = useState({ min: minPrice, max: maxPrice });
   const { addItem } = useCart();
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q), 300);
     return () => clearTimeout(t);
   }, [q]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedPrice({ min: minPrice, max: maxPrice }), 400);
+    return () => clearTimeout(t);
+  }, [minPrice, maxPrice]);
+
+  useEffect(() => {
+    api.get("/public/brands").then((r) => setBrands(r.data)).catch(() => setBrands([]));
+  }, []);
 
   const quickAdd = (e, p) => {
     e.preventDefault();
@@ -33,6 +46,7 @@ export default function Shop() {
 
   const type = searchParams.get("type") || "";
   const categoryId = searchParams.get("category") || "";
+  const brand = searchParams.get("brand") || "";
   const sort = searchParams.get("sort") || "newest";
 
   useEffect(() => {
@@ -45,11 +59,14 @@ export default function Shop() {
     if (debouncedQ) params.q = debouncedQ;
     if (type) params.type = type;
     if (categoryId) params.category_id = categoryId;
+    if (brand) params.brand = brand;
+    if (debouncedPrice.min) params.min_price = debouncedPrice.min;
+    if (debouncedPrice.max) params.max_price = debouncedPrice.max;
     api.get("/public/products", { params })
       .then((r) => setProducts(r.data))
       .catch((err) => toast.error(formatApiError(err)))
       .finally(() => setLoading(false));
-  }, [debouncedQ, type, categoryId]);
+  }, [debouncedQ, type, categoryId, brand, debouncedPrice]);
 
   const sorted = useMemo(() => {
     const arr = [...products];
@@ -65,8 +82,12 @@ export default function Shop() {
     setSearchParams(np, { replace: true });
   };
 
-  const clearFilters = () => setSearchParams({}, { replace: true });
-  const hasFilters = type || categoryId || q;
+  const clearFilters = () => {
+    setSearchParams({}, { replace: true });
+    setMinPrice("");
+    setMaxPrice("");
+  };
+  const hasFilters = type || categoryId || q || brand || minPrice || maxPrice;
 
   return (
     <div className="max-w-[1400px] mx-auto px-6 py-10">
@@ -140,6 +161,46 @@ export default function Shop() {
                       {c.name} <span className="text-zinc-600">{c.product_count}</span>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {brands.length > 0 && (
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2 font-bold">Marca</div>
+                  <select
+                    value={brand}
+                    onChange={(e) => setParam("brand", e.target.value)}
+                    className="w-full bg-transparent border border-white/15 px-3 py-2 text-xs uppercase tracking-widest font-bold focus:outline-none focus:border-[#10B981]"
+                    data-testid="shop-brand-filter"
+                  >
+                    <option value="">Todas</option>
+                    {brands.map((b) => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2 font-bold">Precio (USD)</div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    placeholder="Mín"
+                    className="w-full bg-transparent border border-white/15 px-3 py-2 text-xs focus:outline-none focus:border-[#10B981]"
+                    data-testid="shop-min-price"
+                  />
+                  <span className="text-zinc-600">—</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    placeholder="Máx"
+                    className="w-full bg-transparent border border-white/15 px-3 py-2 text-xs focus:outline-none focus:border-[#10B981]"
+                    data-testid="shop-max-price"
+                  />
                 </div>
               </div>
 

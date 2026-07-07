@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   LayoutDashboard, Package, ArrowLeftRight, Users, LogOut,
   AlertTriangle, FolderKanban, Menu, X, Plus, FileText, Truck, Star, Contact,
+  BarChart3, ShieldAlert,
 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import Avatar from "@/components/Avatar";
@@ -19,7 +20,9 @@ const items = [
   { to: "/admin/kardex",       label: "Kárdex",       icon: FileText,        testid: "nav-kardex",     permission: "view_kardex",    group: "operaciones" },
   { to: "/admin/pedidos",      label: "Pedidos",      icon: Truck,           testid: "nav-orders",     permission: "view_orders",    group: "operaciones" },
   { to: "/admin/alertas",      label: "Alertas",      icon: AlertTriangle,   testid: "nav-alerts",     permission: "view_alerts",    group: "analisis" },
+  { to: "/admin/reportes",     label: "Reportes",     icon: BarChart3,       testid: "nav-reports",    permission: "view_reports",   group: "analisis" },
   { to: "/admin/usuarios",     label: "Usuarios",     icon: Users,           testid: "nav-users",      adminOnly: true,              group: "admin" },
+  { to: "/admin/auditoria",    label: "Auditoría",    icon: ShieldAlert,     testid: "nav-audit",      adminOnly: true,              group: "admin" },
 ];
 
 export default function Layout() {
@@ -44,7 +47,7 @@ export default function Layout() {
     navigate("/admin/login", { replace: true });
   };
 
-  const showFab = !["/admin/usuarios", "/admin/categorias", "/admin/proveedores", "/admin/kardex", "/admin/pedidos", "/admin/resenas"].some((p) => location.pathname.startsWith(p));
+  const showFab = !["/admin/usuarios", "/admin/categorias", "/admin/proveedores", "/admin/kardex", "/admin/pedidos", "/admin/resenas", "/admin/reportes", "/admin/auditoria"].some((p) => location.pathname.startsWith(p));
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white relative">

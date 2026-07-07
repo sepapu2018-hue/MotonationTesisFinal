@@ -5,6 +5,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const { pool, query, one } = require('../config/db');
 const { authRequired, adminRequired } = require('../middleware/auth');
 const { httpError } = require('../middleware/errorHandler');
+const { logAudit } = require('../utils/auditLog');
 
 const router = express.Router();
 router.use(authRequired);
@@ -21,8 +22,11 @@ const productSchema = z.object({
   stock: z.coerce.number().int().min(0),
   min_stock: z.coerce.number().int().min(0).default(5),
   image_url: z.string().optional().default(''),
+  images: z.array(z.string()).optional().default([]),
   description: z.string().optional().default(''),
   is_published: z.coerce.boolean().optional().default(true),
+  // Ficha técnica: pares clave/valor libres (ej. "Cilindraje": "150cc")
+  specs: z.record(z.string(), z.string()).optional().default({}),
 });
 
 // El stock NO se edita por acá: una vez creado el producto, solo cambia a
@@ -99,9 +103,10 @@ router.post('/', adminRequired, asyncHandler(async (req, res) => {
     await client.query('BEGIN');
 
     const p = await one(
-      `INSERT INTO products (sku, name, type, brand, model, category_id, cost, price, stock, min_stock, image_url, description, is_published)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
-      [d.sku, d.name, d.type, d.brand, d.model, d.category_id, d.cost, d.price, d.stock, d.min_stock, d.image_url, d.description, d.is_published]
+      `INSERT INTO products (sku, name, type, brand, model, category_id, cost, price, stock, min_stock, image_url, images, description, is_published, specs)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
+      [d.sku, d.name, d.type, d.brand, d.model, d.category_id, d.cost, d.price, d.stock, d.min_stock, d.image_url,
+       JSON.stringify(d.images), d.description, d.is_published, JSON.stringify(d.specs)]
     );
 
     // Si el producto se crea con stock inicial, se genera su partida correspondiente en movimientos
@@ -132,9 +137,11 @@ router.put('/:id', adminRequired, asyncHandler(async (req, res) => {
 
   const p = await one(
     `UPDATE products SET sku=$1, name=$2, type=$3, brand=$4, model=$5, category_id=$6,
-                        cost=$7, price=$8, min_stock=$9, image_url=$10, description=$11, is_published=$12, updated_at=NOW()
-     WHERE id = $13 RETURNING *`,
-    [d.sku, d.name, d.type, d.brand, d.model, d.category_id, d.cost, d.price, d.min_stock, d.image_url, d.description, d.is_published, req.params.id]
+                        cost=$7, price=$8, min_stock=$9, image_url=$10, images=$11, description=$12,
+                        is_published=$13, specs=$14, updated_at=NOW()
+     WHERE id = $15 RETURNING *`,
+    [d.sku, d.name, d.type, d.brand, d.model, d.category_id, d.cost, d.price, d.min_stock, d.image_url,
+     JSON.stringify(d.images), d.description, d.is_published, JSON.stringify(d.specs), req.params.id]
   );
   if (!p) throw httpError(404, 'Producto no encontrado');
   res.json(normalize(p));
@@ -142,8 +149,11 @@ router.put('/:id', adminRequired, asyncHandler(async (req, res) => {
 
 // 5. ELIMINAR PRODUCTO
 router.delete('/:id', adminRequired, asyncHandler(async (req, res) => {
-  const out = await query('DELETE FROM products WHERE id = $1 RETURNING id', [req.params.id]);
-  if (out.length === 0) throw httpError(404, 'Producto no encontrado o ya eliminado');
+  const existing = await one('SELECT id, name, sku FROM products WHERE id = $1', [req.params.id]);
+  if (!existing) throw httpError(404, 'Producto no encontrado o ya eliminado');
+
+  await query('DELETE FROM products WHERE id = $1', [req.params.id]);
+  await logAudit(req.user, 'eliminar_producto', 'product', existing.id, { name: existing.name, sku: existing.sku });
   res.json({ ok: true });
 }));
 

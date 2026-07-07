@@ -5,6 +5,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const { query, one } = require('../config/db');
 const { authRequired, adminRequired } = require('../middleware/auth');
 const { httpError } = require('../middleware/errorHandler');
+const { logAudit } = require('../utils/auditLog');
 
 const router = express.Router();
 
@@ -61,6 +62,7 @@ router.post('/', asyncHandler(async (req, res) => {
      RETURNING id, email, name, role, avatar_url, permissions, created_at`,
     [email, data.name, hash, data.role, data.avatar_url || '', JSON.stringify(data.permissions || [])]
   );
+  await logAudit(req.user, 'crear_usuario', 'user', user.id, { email: user.email, role: user.role, permissions: user.permissions });
   res.status(201).json(user);
 }));
 
@@ -70,7 +72,10 @@ router.put('/:id', asyncHandler(async (req, res) => {
   const data = userEditSchema.parse(req.body);
   const email = data.email.toLowerCase();
 
-  const target = await one('SELECT id, role FROM users WHERE id = $1', [id]);
+  const target = await one(
+    `SELECT id, role, ARRAY(SELECT jsonb_array_elements_text(permissions)) AS permissions FROM users WHERE id = $1`,
+    [id]
+  );
   if (!target) throw httpError(404, 'Usuario no encontrado');
 
   const emailTaken = await one('SELECT id FROM users WHERE email = $1 AND id <> $2', [email, id]);
@@ -98,6 +103,16 @@ router.put('/:id', asyncHandler(async (req, res) => {
     );
   }
 
+  const roleChanged = target.role !== user.role;
+  const permsChanged = JSON.stringify([...target.permissions].sort()) !== JSON.stringify([...user.permissions].sort());
+  if (roleChanged || permsChanged) {
+    await logAudit(req.user, 'editar_permisos_usuario', 'user', user.id, {
+      email: user.email,
+      role_antes: target.role, role_despues: user.role,
+      permisos_antes: target.permissions, permisos_despues: user.permissions,
+    });
+  }
+
   res.json(user);
 }));
 
@@ -120,7 +135,7 @@ router.delete('/:id', asyncHandler(async (req, res) => {
 
   if (id === req.user.id) throw httpError(400, 'No puedes eliminar tu propia cuenta');
 
-  const user = await one('SELECT id, role FROM users WHERE id = $1', [id]);
+  const user = await one('SELECT id, email, role FROM users WHERE id = $1', [id]);
   if (!user) throw httpError(404, 'Usuario no encontrado');
 
   if (user.role === 'admin') {
@@ -129,6 +144,7 @@ router.delete('/:id', asyncHandler(async (req, res) => {
   }
 
   await query('DELETE FROM users WHERE id = $1', [id]);
+  await logAudit(req.user, 'eliminar_usuario', 'user', id, { email: user.email, role: user.role });
   res.json({ ok: true });
 }));
 

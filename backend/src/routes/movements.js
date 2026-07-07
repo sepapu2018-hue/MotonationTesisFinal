@@ -6,6 +6,7 @@ const { pool, query } = require('../config/db');
 const { authRequired } = require('../middleware/auth');
 const { httpError } = require('../middleware/errorHandler');
 const { weightedAverageCost } = require('../utils/costing');
+const { checkLowStockAlert } = require('../utils/stockAlerts');
 
 const router = express.Router();
 router.use(authRequired);
@@ -46,7 +47,7 @@ router.post('/', asyncHandler(async (req, res) => {
     await client.query('BEGIN');
 
     const prodRes = await client.query(
-      'SELECT id, name, sku, stock, cost, price FROM products WHERE id = $1 FOR UPDATE',
+      'SELECT id, name, sku, stock, cost, price, min_stock FROM products WHERE id = $1 FOR UPDATE',
       [data.product_id]
     );
     const product = prodRes.rows[0];
@@ -93,6 +94,14 @@ router.post('/', asyncHandler(async (req, res) => {
     );
 
     await client.query('COMMIT');
+
+    if (!isIncrease) {
+      await checkLowStockAlert(
+        { name: product.name, sku: product.sku, min_stock: product.min_stock, stock: newStock },
+        product.stock
+      );
+    }
+
     res.status(201).json(ins.rows[0]);
   } catch (e) {
     await client.query('ROLLBACK');

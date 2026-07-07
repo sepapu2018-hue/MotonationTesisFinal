@@ -6,7 +6,8 @@ const { pool, query, one } = require('../config/db');
 const { customerRequired, authRequired } = require('../middleware/auth');
 const { httpError } = require('../middleware/errorHandler');
 const { computeOrderTotals, generateOrderNumber } = require('../utils/pricing');
-const { sendOrderConfirmationEmail, isConfigured: mailerConfigured } = require('../utils/mailer');
+const { sendOrderConfirmationEmail, sendNewOrderAdminEmail, isConfigured: mailerConfigured } = require('../utils/mailer');
+const { checkLowStockAlert } = require('../utils/stockAlerts');
 
 const router = express.Router();
 
@@ -29,7 +30,7 @@ router.post('/checkout', customerRequired, asyncHandler(async (req, res) => {
 
     const productIds = data.items.map((i) => i.product_id);
     const prodRes = await client.query(
-      `SELECT id, sku, name, cost, price, stock FROM products
+      `SELECT id, sku, name, cost, price, stock, min_stock FROM products
        WHERE id = ANY($1::uuid[]) AND is_published = true
        FOR UPDATE`,
       [productIds]
@@ -70,6 +71,7 @@ router.post('/checkout', customerRequired, asyncHandler(async (req, res) => {
 
     // Persistencia de los ítems de la orden y registro en Kardex
     const emailItems = [];
+    const stockAlertCandidates = [];
     for (const it of data.items) {
       const p = byId[it.product_id];
       const itemSubtotal = Number((Number(p.price) * it.quantity).toFixed(2));
@@ -86,6 +88,10 @@ router.post('/checkout', customerRequired, asyncHandler(async (req, res) => {
         'UPDATE products SET stock = stock - $1, updated_at = NOW() WHERE id = $2',
         [it.quantity, p.id]
       );
+      stockAlertCandidates.push({
+        product: { name: p.name, sku: p.sku, min_stock: p.min_stock, stock: p.stock - it.quantity },
+        previousStock: p.stock,
+      });
 
       await client.query(
         `INSERT INTO movements
@@ -99,14 +105,23 @@ router.post('/checkout', customerRequired, asyncHandler(async (req, res) => {
 
     await client.query('COMMIT');
 
-    // El comprobante por correo es "best effort": si falla el envío, la compra
-    // ya quedó confirmada igual, solo se registra el error sin romper el checkout.
+    // Correos "best effort": si fallan, la compra ya quedó confirmada igual,
+    // solo se registra el error sin romper el checkout.
     if (mailerConfigured()) {
       try {
         await sendOrderConfirmationEmail(order.customer_email, order, emailItems);
       } catch (err) {
         console.error('Error enviando comprobante de compra:', err);
       }
+      try {
+        const admins = await query("SELECT email FROM users WHERE role = 'admin'");
+        await sendNewOrderAdminEmail(admins.map((a) => a.email), order, emailItems);
+      } catch (err) {
+        console.error('Error notificando pedido nuevo al admin:', err);
+      }
+    }
+    for (const { product, previousStock } of stockAlertCandidates) {
+      await checkLowStockAlert(product, previousStock);
     }
 
     res.status(201).json({
