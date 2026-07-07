@@ -6,6 +6,7 @@ const { pool, query, one } = require('../config/db');
 const { customerRequired, authRequired } = require('../middleware/auth');
 const { httpError } = require('../middleware/errorHandler');
 const { computeOrderTotals, generateOrderNumber } = require('../utils/pricing');
+const { sendOrderConfirmationEmail, isConfigured: mailerConfigured } = require('../utils/mailer');
 
 const router = express.Router();
 
@@ -68,9 +69,11 @@ router.post('/checkout', customerRequired, asyncHandler(async (req, res) => {
     const order = orderRes.rows[0];
 
     // Persistencia de los ítems de la orden y registro en Kardex
+    const emailItems = [];
     for (const it of data.items) {
       const p = byId[it.product_id];
       const itemSubtotal = Number((Number(p.price) * it.quantity).toFixed(2));
+      emailItems.push({ product_name: p.name, quantity: it.quantity, subtotal: itemSubtotal });
 
       await client.query(
         `INSERT INTO order_items
@@ -95,6 +98,16 @@ router.post('/checkout', customerRequired, asyncHandler(async (req, res) => {
     }
 
     await client.query('COMMIT');
+
+    // El comprobante por correo es "best effort": si falla el envío, la compra
+    // ya quedó confirmada igual, solo se registra el error sin romper el checkout.
+    if (mailerConfigured()) {
+      try {
+        await sendOrderConfirmationEmail(order.customer_email, order, emailItems);
+      } catch (err) {
+        console.error('Error enviando comprobante de compra:', err);
+      }
+    }
 
     res.status(201).json({
       ...order,

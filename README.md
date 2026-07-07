@@ -28,7 +28,7 @@ Hasta la fecha, el desarrollo de la plataforma ha avanzado significativamente, c
 - **Backups:** Respaldo automático diario en Supabase (producción) + scripts propios de backup/restore manual (`npm run backup` / `npm run restore`).
 - **Catálogo Público de Productos:** Visualización de productos para clientes externos con filtros, búsqueda y detalle por SKU.
 - **Cuenta de Cliente:** Registro, login, edición de perfil y recuperación de contraseña ("olvidé mi contraseña" con token de un solo uso).
-- **Carrito de Compras y Checkout:** Flujo funcional para selección de productos, checkout simulado y generación de pedidos con cálculo de impuestos.
+- **Carrito de Compras y Checkout:** Flujo funcional para selección de productos, checkout simulado y generación de pedidos con cálculo de impuestos. Al confirmarse la compra, se envía un comprobante por correo al cliente con el detalle de ítems y totales (best effort: si el envío falla, la compra queda igual de confirmada).
 - **Gestión de Pedidos (Admin):** Listado y detalle de todos los pedidos, cambio de estado (pendiente → pagado → enviado → entregado / cancelado). El cliente puede ver y cancelar sus propios pedidos (repone stock automáticamente).
 - **Reseñas de Clientes:** Los visitantes pueden dejar una reseña pública desde la Home; el panel admin permite moderarlas (listar/eliminar).
 - **Sincronización de Inventario:** Actualización automática del stock tras cada venta o cancelación de pedido, con trazabilidad en Kárdex/Movimientos.
@@ -554,6 +554,7 @@ curl -b cookies.txt $API/api/products | head
 19. **Crear un proveedor** en `Proveedores` y usarlo en una entrada de stock desde Movimientos → el movimiento y el Kárdex muestran el proveedor asociado.
 20. **Iniciar sesión en el panel** con usuario/contraseña correctos → no entra directo, pide un código de 6 dígitos enviado al correo; con el código correcto entra, con uno incorrecto lo rechaza (`Código incorrecto`).
 21. **Solicitar recuperación de contraseña del staff** desde `/admin/olvide` → usar el token devuelto en modo desarrollo para restablecerla en `/admin/restablecer`; con la contraseña nueva el login pide el código de verificación como cualquier login.
+22. **Completar una compra** desde el checkout → al cliente le llega un correo de confirmación con el número de pedido, los ítems y el total; si el correo no está configurado, la compra se confirma igual sin bloquear el checkout.
 
 ---
 
