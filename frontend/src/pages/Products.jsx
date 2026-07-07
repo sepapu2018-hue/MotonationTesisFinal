@@ -1,13 +1,14 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { PrimaryButton, GhostButton, Field, inputClass, Badge } from "@/components/ui-kit";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { Plus, Search, Edit2, Trash2, X, Package, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, X, Package, Filter, ChevronLeft, ChevronRight, Image as ImageIcon, ArrowUpRight } from "lucide-react";
 
 const PAGE_SIZE = 20;
+const MAX_IMAGE_DATA_URL_LENGTH = 1.5 * 1024 * 1024; // ~1.5MB en base64, generoso tras comprimir
 
 const empty = {
   sku: "", name: "", type: "motocicleta", brand: "", model: "",
@@ -16,10 +17,39 @@ const empty = {
 
 const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits: 0 })}`;
 
+// Redimensiona/comprime la imagen elegida en el navegador antes de guardarla como data URL,
+// así no dependemos de subir el archivo a un servidor de storage externo.
+function fileToCompressedDataUrl(file, maxSize = 800, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("El archivo no es una imagen válida"));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxSize || height > maxSize) {
+          const scale = maxSize / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function Products() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
@@ -31,6 +61,7 @@ export default function Products() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(empty);
   const [error, setError] = useState("");
+  const [imageError, setImageError] = useState("");
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -66,13 +97,42 @@ export default function Products() {
     setEditing(null);
     setForm({ ...empty, category_id: cats[0]?.id || "" });
     setError("");
+    setImageError("");
     setShowForm(true);
   };
   const openEdit = (p) => {
     setEditing(p);
     setForm({ ...p });
     setError("");
+    setImageError("");
     setShowForm(true);
+  };
+
+  const goAdjustStock = () => {
+    if (!editing) return;
+    setShowForm(false);
+    navigate(`/admin/movimientos?new=1&product_id=${editing.id}&type=ajuste`);
+  };
+
+  const handleImageFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permite volver a elegir el mismo archivo despues
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setImageError("El archivo debe ser una imagen");
+      return;
+    }
+    setImageError("");
+    try {
+      const dataUrl = await fileToCompressedDataUrl(file);
+      if (dataUrl.length > MAX_IMAGE_DATA_URL_LENGTH) {
+        setImageError("La imagen es muy grande incluso comprimida, probá con otra");
+        return;
+      }
+      setForm((f) => ({ ...f, image_url: dataUrl }));
+    } catch (err) {
+      setImageError(err.message);
+    }
   };
 
   const save = async (e) => {
@@ -319,9 +379,55 @@ export default function Products() {
               <Field label="Marca"><input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} className={inputClass()} data-testid="form-brand" /></Field>
               <Field label="Modelo"><input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} className={inputClass()} data-testid="form-model" /></Field>
               <Field label="Precio (USD)"><input type="number" min="0" step="0.01" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className={inputClass()} data-testid="form-price" /></Field>
-              <Field label="Stock inicial"><input type="number" min="0" required value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} className={inputClass()} data-testid="form-stock" /></Field>
+              <Field label={editing ? "Stock" : "Stock inicial"}>
+                {editing ? (
+                  <div className="flex items-center gap-2">
+                    <div className={inputClass() + " flex-1 text-zinc-400"} data-testid="form-stock-readonly">{form.stock}</div>
+                    <GhostButton type="button" onClick={goAdjustStock} className="whitespace-nowrap px-3 text-xs" testid="goto-adjust-stock">
+                      Ajustar <ArrowUpRight className="h-3.5 w-3.5 inline -mt-0.5 ml-0.5" />
+                    </GhostButton>
+                  </div>
+                ) : (
+                  <input type="number" min="0" required value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} className={inputClass()} data-testid="form-stock" />
+                )}
+              </Field>
               <Field label="Stock mínimo"><input type="number" min="0" required value={form.min_stock} onChange={(e) => setForm({ ...form, min_stock: e.target.value })} className={inputClass()} data-testid="form-min-stock" /></Field>
-              <Field label="URL Imagen"><input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className={inputClass()} data-testid="form-image" /></Field>
+              <div className="col-span-2">
+                <Field label="Imagen del producto">
+                  <div className="flex items-start gap-4">
+                    <div className="h-20 w-20 shrink-0 border border-white/10 bg-black/30 flex items-center justify-center overflow-hidden">
+                      {form.image_url ? (
+                        <img src={form.image_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <ImageIcon className="h-6 w-6 text-zinc-600" />
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <input
+                        type="text"
+                        value={form.image_url.startsWith("data:") ? "" : form.image_url}
+                        onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                        placeholder={form.image_url.startsWith("data:") ? "Imagen subida desde archivo" : "https://... (pegar URL de imagen)"}
+                        disabled={form.image_url.startsWith("data:")}
+                        className={inputClass()}
+                        data-testid="form-image"
+                      />
+                      <div className="flex items-center gap-3">
+                        <label className="cursor-pointer text-xs font-bold uppercase tracking-widest text-[#10B981] hover:underline">
+                          Subir archivo
+                          <input type="file" accept="image/*" onChange={handleImageFile} className="hidden" data-testid="form-image-file" />
+                        </label>
+                        {form.image_url && (
+                          <button type="button" onClick={() => setForm((f) => ({ ...f, image_url: "" }))} className="text-xs text-zinc-500 hover:text-red-400" data-testid="form-image-clear">
+                            Quitar imagen
+                          </button>
+                        )}
+                      </div>
+                      {imageError && <div className="text-xs text-amber-400">{imageError}</div>}
+                    </div>
+                  </div>
+                </Field>
+              </div>
               <div className="col-span-2">
                 <Field label="Descripción"><textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={inputClass()} /></Field>
               </div>

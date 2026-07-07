@@ -2,7 +2,7 @@ process.env.JWT_SECRET = 'test-secret-do-not-use-in-prod';
 
 const jwt = require('jsonwebtoken');
 const {
-  signAccess, signRefresh, signCustomerAccess, signCustomerRefresh, verify,
+  signAccess, signRefresh, signOtpPending, signCustomerAccess, signCustomerRefresh, verify,
 } = require('../src/utils/tokens');
 
 const staffUser = { id: 'user-1', email: 'staff@test.com', role: 'admin' };
@@ -25,6 +25,14 @@ describe('tokens de staff', () => {
     expect(payload.sub).toBe(staffUser.id);
     expect(payload.type).toBe('refresh');
     expect(payload.email).toBeUndefined();
+  });
+
+  it('firma un token de verificación OTP que no puede usarse como access/refresh', () => {
+    const token = signOtpPending(staffUser);
+    const payload = verify(token);
+    expect(payload.sub).toBe(staffUser.id);
+    expect(payload.kind).toBe('staff');
+    expect(payload.type).toBe('otp_pending');
   });
 });
 

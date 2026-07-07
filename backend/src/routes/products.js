@@ -25,6 +25,10 @@ const productSchema = z.object({
   is_published: z.coerce.boolean().optional().default(true),
 });
 
+// El stock NO se edita por acá: una vez creado el producto, solo cambia a
+// través de Movimientos (entrada/salida/ajuste), para no perder trazabilidad en el Kárdex.
+const productUpdateSchema = productSchema.omit({ stock: true });
+
 const normalize = (p) => ({
   ...p,
   cost: Number(p.cost),
@@ -119,18 +123,18 @@ router.post('/', adminRequired, asyncHandler(async (req, res) => {
   }
 }));
 
-// 4. ACTUALIZAR PRODUCTO
+// 4. ACTUALIZAR PRODUCTO (el stock no se toca acá — ver productUpdateSchema)
 router.put('/:id', adminRequired, asyncHandler(async (req, res) => {
-  const d = productSchema.parse(req.body);
+  const d = productUpdateSchema.parse(req.body);
 
   const skuExists = await one('SELECT id FROM products WHERE sku = $1 AND id <> $2', [d.sku, req.params.id]);
   if (skuExists) throw httpError(400, 'El SKU ya está siendo usado por otro producto');
 
   const p = await one(
     `UPDATE products SET sku=$1, name=$2, type=$3, brand=$4, model=$5, category_id=$6,
-                        cost=$7, price=$8, stock=$9, min_stock=$10, image_url=$11, description=$12, is_published=$13, updated_at=NOW()
-     WHERE id = $14 RETURNING *`,
-    [d.sku, d.name, d.type, d.brand, d.model, d.category_id, d.cost, d.price, d.stock, d.min_stock, d.image_url, d.description, d.is_published, req.params.id]
+                        cost=$7, price=$8, min_stock=$9, image_url=$10, description=$11, is_published=$12, updated_at=NOW()
+     WHERE id = $13 RETURNING *`,
+    [d.sku, d.name, d.type, d.brand, d.model, d.category_id, d.cost, d.price, d.min_stock, d.image_url, d.description, d.is_published, req.params.id]
   );
   if (!p) throw httpError(404, 'Producto no encontrado');
   res.json(normalize(p));

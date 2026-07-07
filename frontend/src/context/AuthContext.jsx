@@ -17,13 +17,33 @@ export function AuthProvider({ children }) {
 
   useEffect(() => { checkSession(); }, [checkSession]);
 
+  // Paso 1: valida usuario/contraseña y dispara el código de verificación por correo.
+  // No autentica todavía — devuelve un pending_token para el paso 2.
   const login = async (email, password) => {
     try {
       const { data } = await api.post("/auth/login", { email, password });
-      setUser(data.user); // CORREGIDO: Extraemos data.user
+      return data; // { ok, otp_required, pending_token, dev_otp_code? }
+    } catch (err) {
+      throw new Error(formatApiError(err));
+    }
+  };
+
+  // Paso 2: confirma el código recibido por correo y recién ahí abre la sesión.
+  const verifyOtp = async (pendingToken, code) => {
+    try {
+      const { data } = await api.post("/auth/login/verify-otp", { pending_token: pendingToken, code });
+      setUser(data.user);
       return data;
     } catch (err) {
-      setUser(false);
+      throw new Error(formatApiError(err));
+    }
+  };
+
+  const resendOtp = async (pendingToken) => {
+    try {
+      const { data } = await api.post("/auth/login/resend-otp", { pending_token: pendingToken });
+      return data;
+    } catch (err) {
       throw new Error(formatApiError(err));
     }
   };
@@ -34,7 +54,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, refresh: checkSession }}>
+    <AuthContext.Provider value={{ user, login, verifyOtp, resendOtp, logout, refresh: checkSession }}>
       {children}
     </AuthContext.Provider>
   );

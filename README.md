@@ -371,6 +371,7 @@ Abre <http://localhost:3000> en el navegador. Verás la tienda pública; el pane
 | `order_items`     | id, order_id (FK), product_id (FK), quantity, unit_cost, unit_price, subtotal |
 | `customers`        | id (uuid), email (unique), name, phone, address, city, password_hash (bcrypt), created_at |
 | `password_resets` | id, customer_id (FK CASCADE), token_hash (hash SHA-256, unique), expires_at, used_at — tokens de recuperación de contraseña |
+| `login_otps`      | id, user_id (FK CASCADE), code_hash (hash SHA-256), expires_at, used_at, attempts — códigos de verificación (2FA) del login de staff |
 | `reviews`          | id, name, city, rating (1-5), text, is_published, created_at — reseñas públicas de la tienda (se conservan solo las 3 más recientes) |
 
 Ver `backend/src/db/schema.sql` para el DDL completo (incluye `CHECK` constraints, FKs, índices).
@@ -399,12 +400,14 @@ npm run restore -- backups/backup_2026-07-04T23-23-06-148Z.json   # restaura un 
 
 ### Autenticación (Staff)
 
-| Método | Ruta                 | Descripción                  | Rol      |
-|--------|----------------------|-------------------------------|----------|
-| POST   | `/api/auth/login`    | Iniciar sesión                | público  |
-| POST   | `/api/auth/logout`   | Cerrar sesión                 | autent.  |
-| GET    | `/api/auth/me`       | Datos del usuario actual      | autent.  |
-| POST   | `/api/auth/refresh`  | Renovar access token          | autent.  |
+| Método | Ruta                          | Descripción                                              | Rol      |
+|--------|--------------------------------|-----------------------------------------------------------|----------|
+| POST   | `/api/auth/login`             | Paso 1: valida usuario/contraseña y envía un código de verificación por correo | público  |
+| POST   | `/api/auth/login/verify-otp`  | Paso 2: valida el código y recién ahí abre la sesión      | público  |
+| POST   | `/api/auth/login/resend-otp`  | Reenvía un nuevo código de verificación                   | público  |
+| POST   | `/api/auth/logout`             | Cerrar sesión                                              | autent.  |
+| GET    | `/api/auth/me`                 | Datos del usuario actual                                   | autent.  |
+| POST   | `/api/auth/refresh`            | Renovar access token                                       | autent.  |
 
 ### Productos y Categorías
 
@@ -563,6 +566,7 @@ curl -b cookies.txt $API/api/products | head
 - Sesión de staff y de clientes con **JWT** de acceso (8h) + refresco (7d) en cookies `httpOnly`.
 - Protección **anti fuerza bruta**: `express-rate-limit` en `/api/auth/login`, `/api/customer/login`, `/api/customer/register`, `/api/customer/forgot-password` y `/api/customer/reset-password` (10 intentos / 15 min por IP).
 - Recuperación de contraseña con token de un solo uso, hasheado (SHA-256) y con expiración de 30 minutos; la respuesta al solicitar el reset no revela si el correo existe.
+- **Verificación en dos pasos (2FA) por correo en el login del panel interno**: tras validar usuario/contraseña no se abre la sesión de inmediato — se envía un código de 6 dígitos por correo (`login_otps`, hasheado con SHA-256, expira en 10 minutos, máximo 5 intentos por código) y solo se emiten las cookies de sesión al validarlo correctamente. No aplica al login de clientes, solo al staff.
 - Cabeceras de seguridad HTTP con **helmet** (XSS, sniffing, clickjacking). El CSP de helmet se deja deshabilitado a propósito: esta API solo devuelve JSON (no sirve HTML), así que no tiene superficie sobre la que aplicar una Content-Security-Policy.
 - Protección **CSRF**: toda petición que cambia estado (POST/PUT/PATCH/DELETE) y trae cabecera `Origin` o `Referer` debe coincidir con un origen permitido (la misma lista blanca que usa CORS); si no matchea, se rechaza con `403`. Las peticiones sin esas cabeceras (clientes no-navegador) no se bloquean, porque un ataque CSRF real siempre parte de un navegador y esas cabeceras las pone el navegador, no el atacante.
 - Reglas de negocio a nivel de API: nadie puede eliminar su propia cuenta ni dejar el sistema sin administradores (ni por edición de rol ni por borrado).

@@ -30,6 +30,16 @@ function signRefresh(user) {
   );
 }
 
+// Token de corta duración que sólo prueba "usuario/contraseña ya validados,
+// falta el código de verificación" — no sirve como access token (distinto `type`).
+function signOtpPending(user) {
+  return jwt.sign(
+    { sub: user.id, kind: 'staff', type: 'otp_pending' },
+    process.env.JWT_SECRET,
+    { expiresIn: '10m' }
+  );
+}
+
 function signCustomerAccess(customer) {
   return jwt.sign(
     { sub: customer.id, email: customer.email, kind: 'customer', type: 'access' },
@@ -72,6 +82,6 @@ function clearCustomerCookies(res) {
 }
 
 module.exports = {
-  signAccess, signRefresh, verify, setAuthCookies, clearAuthCookies,
+  signAccess, signRefresh, signOtpPending, verify, setAuthCookies, clearAuthCookies,
   signCustomerAccess, signCustomerRefresh, setCustomerCookies, clearCustomerCookies,
 };

@@ -28,8 +28,15 @@ export default function Movements() {
   useEffect(() => {
     if (searchParams.get("new") === "1") {
       setError("");
+      const productId = searchParams.get("product_id");
+      const type = searchParams.get("type");
+      if (productId || type) {
+        setForm({ ...emptyForm, product_id: productId || "", type: type || "entrada" });
+      }
       setShowForm(true);
       searchParams.delete("new");
+      searchParams.delete("product_id");
+      searchParams.delete("type");
       setSearchParams(searchParams, { replace: true });
     }
   }, [searchParams, setSearchParams]);
