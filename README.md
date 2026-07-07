@@ -157,7 +157,9 @@ src/
     ├── Suppliers.jsx             ← CRUD de proveedores
     ├── Dashboard.jsx             ← KPIs + movimientos + alertas
     ├── Kardex.jsx                ← historial de movimientos + export PDF
-    ├── Login.jsx
+    ├── Login.jsx                 ← usuario/contraseña + código de verificación (2FA)
+    ├── ForgotPasswordStaff.jsx   ← recuperar contraseña (staff)
+    ├── ResetPasswordStaff.jsx    ← definir nueva contraseña (staff)
     ├── Movements.jsx             ← registro entrada/salida/ajuste por conteo físico
     ├── Orders.jsx                ← gestión de pedidos (admin)
     ├── Products.jsx              ← CRUD con filtros, paginación y modal
@@ -372,6 +374,7 @@ Abre <http://localhost:3000> en el navegador. Verás la tienda pública; el pane
 | `customers`        | id (uuid), email (unique), name, phone, address, city, password_hash (bcrypt), created_at |
 | `password_resets` | id, customer_id (FK CASCADE), token_hash (hash SHA-256, unique), expires_at, used_at — tokens de recuperación de contraseña |
 | `login_otps`      | id, user_id (FK CASCADE), code_hash (hash SHA-256), expires_at, used_at, attempts — códigos de verificación (2FA) del login de staff |
+| `staff_password_resets` | id, user_id (FK CASCADE), token_hash (hash SHA-256, unique), expires_at, used_at — tokens de recuperación de contraseña del staff |
 | `reviews`          | id, name, city, rating (1-5), text, is_published, created_at — reseñas públicas de la tienda (se conservan solo las 3 más recientes) |
 
 Ver `backend/src/db/schema.sql` para el DDL completo (incluye `CHECK` constraints, FKs, índices).
@@ -405,6 +408,8 @@ npm run restore -- backups/backup_2026-07-04T23-23-06-148Z.json   # restaura un 
 | POST   | `/api/auth/login`             | Paso 1: valida usuario/contraseña y envía un código de verificación por correo | público  |
 | POST   | `/api/auth/login/verify-otp`  | Paso 2: valida el código y recién ahí abre la sesión      | público  |
 | POST   | `/api/auth/login/resend-otp`  | Reenvía un nuevo código de verificación                   | público  |
+| POST   | `/api/auth/forgot-password`   | Solicita un enlace de recuperación de contraseña (staff)  | público  |
+| POST   | `/api/auth/reset-password`    | Restablece la contraseña con el token del correo          | público  |
 | POST   | `/api/auth/logout`             | Cerrar sesión                                              | autent.  |
 | GET    | `/api/auth/me`                 | Datos del usuario actual                                   | autent.  |
 | POST   | `/api/auth/refresh`            | Renovar access token                                       | autent.  |
@@ -547,6 +552,8 @@ curl -b cookies.txt $API/api/products | head
 17. **Registrar un ajuste de inventario** (Movimientos → Ajuste) sin indicar motivo → debe rechazarse; con motivo y dirección (+/-) → el stock se corrige y queda registrado en Kárdex con el signo correcto.
 18. **Registrar una entrada con costo distinto al actual** → el costo del producto se recalcula como promedio ponderado (no se sobrescribe).
 19. **Crear un proveedor** en `Proveedores` y usarlo en una entrada de stock desde Movimientos → el movimiento y el Kárdex muestran el proveedor asociado.
+20. **Iniciar sesión en el panel** con usuario/contraseña correctos → no entra directo, pide un código de 6 dígitos enviado al correo; con el código correcto entra, con uno incorrecto lo rechaza (`Código incorrecto`).
+21. **Solicitar recuperación de contraseña del staff** desde `/admin/olvide` → usar el token devuelto en modo desarrollo para restablecerla en `/admin/restablecer`; con la contraseña nueva el login pide el código de verificación como cualquier login.
 
 ---
 
@@ -564,8 +571,8 @@ curl -b cookies.txt $API/api/products | head
 
 - Contraseñas con **bcrypt** (10 rondas), nunca en texto plano.
 - Sesión de staff y de clientes con **JWT** de acceso (8h) + refresco (7d) en cookies `httpOnly`.
-- Protección **anti fuerza bruta**: `express-rate-limit` en `/api/auth/login`, `/api/customer/login`, `/api/customer/register`, `/api/customer/forgot-password` y `/api/customer/reset-password` (10 intentos / 15 min por IP).
-- Recuperación de contraseña con token de un solo uso, hasheado (SHA-256) y con expiración de 30 minutos; la respuesta al solicitar el reset no revela si el correo existe.
+- Protección **anti fuerza bruta**: `express-rate-limit` en `/api/auth/login`, `/api/auth/forgot-password`, `/api/auth/reset-password`, `/api/customer/login`, `/api/customer/register`, `/api/customer/forgot-password` y `/api/customer/reset-password` (10 intentos / 15 min por IP).
+- Recuperación de contraseña (tanto de clientes como de staff) con token de un solo uso, hasheado (SHA-256) y con expiración de 30 minutos; la respuesta al solicitar el reset no revela si el correo existe.
 - **Verificación en dos pasos (2FA) por correo en el login del panel interno**: tras validar usuario/contraseña no se abre la sesión de inmediato — se envía un código de 6 dígitos por correo (`login_otps`, hasheado con SHA-256, expira en 10 minutos, máximo 5 intentos por código) y solo se emiten las cookies de sesión al validarlo correctamente. No aplica al login de clientes, solo al staff.
 - Cabeceras de seguridad HTTP con **helmet** (XSS, sniffing, clickjacking). El CSP de helmet se deja deshabilitado a propósito: esta API solo devuelve JSON (no sirve HTML), así que no tiene superficie sobre la que aplicar una Content-Security-Policy.
 - Protección **CSRF**: toda petición que cambia estado (POST/PUT/PATCH/DELETE) y trae cabecera `Origin` o `Referer` debe coincidir con un origen permitido (la misma lista blanca que usa CORS); si no matchea, se rechaza con `403`. Las peticiones sin esas cabeceras (clientes no-navegador) no se bloquean, porque un ataque CSRF real siempre parte de un navegador y esas cabeceras las pone el navegador, no el atacante.

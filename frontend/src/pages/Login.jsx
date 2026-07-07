@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 import { Loader2, ShieldCheck } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 
@@ -144,6 +144,11 @@ export default function Login() {
                   placeholder="*************"
                   data-testid="login-password-input"
                 />
+                <div className="mt-2 text-right">
+                  <Link to="/admin/olvide" className="text-xs text-zinc-500 hover:text-[#10B981] transition-colors" data-testid="login-forgot-link">
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
               </div>
 
               {error && (

@@ -10,6 +10,8 @@ import PublicLayout from "@/components/PublicLayout";
 
 // Admin pages
 import Login from "@/pages/Login";
+import ForgotPasswordStaff from "@/pages/ForgotPasswordStaff";
+import ResetPasswordStaff from "@/pages/ResetPasswordStaff";
 import Dashboard from "@/pages/Dashboard";
 import Products from "@/pages/Products";
 import Categories from "@/pages/Categories";
@@ -60,6 +62,8 @@ function App() {
 
                 {/* Panel administrativo */}
                 <Route path="/admin/login" element={<Login />} />
+                <Route path="/admin/olvide" element={<ForgotPasswordStaff />} />
+                <Route path="/admin/restablecer" element={<ResetPasswordStaff />} />
                 <Route path="/admin" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                   <Route index element={<Navigate to="/admin/dashboard" replace />} />
                   <Route path="dashboard" element={<Dashboard />} />

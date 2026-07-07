@@ -8,11 +8,13 @@ const { one, query } = require('../config/db');
 const {
   signAccess, signRefresh, signOtpPending, verify, setAuthCookies, clearAuthCookies,
 } = require('../utils/tokens');
-const { sendLoginOtpEmail, isConfigured: mailerConfigured } = require('../utils/mailer');
+const { sendLoginOtpEmail, sendPasswordResetEmail, isConfigured: mailerConfigured } = require('../utils/mailer');
 const { authRequired } = require('../middleware/auth');
 const { httpError } = require('../middleware/errorHandler');
 
 const router = express.Router();
+const FRONTEND_URL = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000';
+const RESET_TOKEN_TTL_MIN = 30;
 
 // Protección anti fuerza bruta: máx. 10 intentos de login cada 15 min por IP
 const loginLimiter = rateLimit({
@@ -154,6 +156,66 @@ router.post('/login/resend-otp', otpLimiter, asyncHandler(async (req, res) => {
 
   const { pendingToken, dev_otp_code } = await issueAndSendOtp(user);
   res.json({ ok: true, otp_required: true, pending_token: pendingToken, dev_otp_code });
+}));
+
+router.post('/forgot-password', loginLimiter, asyncHandler(async (req, res) => {
+  const { email } = z.object({ email: z.string().email() }).parse(req.body);
+  const normalized = email.toLowerCase().trim();
+  const user = await one('SELECT id FROM users WHERE email = $1', [normalized]);
+
+  // Respuesta genérica aunque el correo no exista, para no revelar qué cuentas de staff existen
+  if (!user) {
+    res.json({ ok: true });
+    return;
+  }
+
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+  const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MIN * 60 * 1000);
+
+  await query('DELETE FROM staff_password_resets WHERE user_id = $1 AND used_at IS NULL', [user.id]);
+  await query(
+    'INSERT INTO staff_password_resets (user_id, token_hash, expires_at) VALUES ($1,$2,$3)',
+    [user.id, tokenHash, expiresAt]
+  );
+
+  const resetLink = `${FRONTEND_URL}/admin/restablecer?token=${rawToken}`;
+
+  if (mailerConfigured()) {
+    try {
+      await sendPasswordResetEmail(normalized, resetLink);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('Error enviando email de recuperación (staff):', err);
+      // Si falla el envío, se entrega el enlace en la respuesta para no bloquear al usuario
+      res.json({ ok: true, dev_reset_token: rawToken });
+    }
+  } else {
+    // Sin GMAIL_USER/GMAIL_APP_PASSWORD configurados: el token se devuelve directo en la respuesta
+    res.json({ ok: true, dev_reset_token: rawToken });
+  }
+}));
+
+router.post('/reset-password', loginLimiter, asyncHandler(async (req, res) => {
+  const { token, new_password } = z.object({
+    token: z.string().min(10),
+    new_password: z.string().min(6),
+  }).parse(req.body);
+
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const reset = await one(
+    'SELECT id, user_id, expires_at, used_at FROM staff_password_resets WHERE token_hash = $1',
+    [tokenHash]
+  );
+  if (!reset || reset.used_at || new Date(reset.expires_at) < new Date()) {
+    throw httpError(400, 'El enlace de recuperación no es válido o ya expiró');
+  }
+
+  const hash = await bcrypt.hash(new_password, 10);
+  await query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, reset.user_id]);
+  await query('UPDATE staff_password_resets SET used_at = NOW() WHERE id = $1', [reset.id]);
+
+  res.json({ ok: true });
 }));
 
 router.get('/me', authRequired, (req, res) => {

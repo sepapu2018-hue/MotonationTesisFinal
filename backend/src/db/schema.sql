@@ -25,6 +25,17 @@ CREATE TABLE IF NOT EXISTS login_otps (
 );
 CREATE INDEX IF NOT EXISTS idx_login_otps_user ON login_otps(user_id);
 
+-- Recuperación de contraseña del login interno (staff), separada de password_resets (clientes)
+CREATE TABLE IF NOT EXISTS staff_password_resets (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash  TEXT NOT NULL UNIQUE,
+  expires_at  TIMESTAMPTZ NOT NULL,
+  used_at     TIMESTAMPTZ,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_staff_password_resets_user ON staff_password_resets(user_id);
+
 CREATE TABLE IF NOT EXISTS categories (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name        TEXT NOT NULL UNIQUE,
