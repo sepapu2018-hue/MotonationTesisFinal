@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { useCart } from "@/context/CartContext";
 import { ShoppingCart, ArrowLeft, Check, Minus, Plus, Package, Shield, Truck, Star, MapPin, Quote } from "lucide-react";
+import PageLoader from "@/components/public/PageLoader";
 
 const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits: 0 })}`;
 
@@ -15,6 +16,15 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const [zoomStyle, setZoomStyle] = useState({ transform: "scale(1)" });
+
+  const handleImageMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setZoomStyle({ transformOrigin: `${x}% ${y}%`, transform: "scale(1.9)" });
+  };
+  const handleImageLeave = () => setZoomStyle({ transform: "scale(1)" });
 
   const [reviews, setReviews] = useState([]);
   const [reviewForm, setReviewForm] = useState({ name: "", city: "", rating: 5, text: "" });
@@ -54,7 +64,11 @@ export default function ProductDetail() {
   };
 
   if (product === null) {
-    return <div className="py-32 text-center text-zinc-500 uppercase tracking-widest">Cargando…</div>;
+    return (
+      <div className="max-w-[1400px] mx-auto px-6 py-10">
+        <PageLoader variant="detail" />
+      </div>
+    );
   }
   if (product === false) {
     return (
@@ -81,9 +95,18 @@ export default function ProductDetail() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
-          <div className="bg-[#0E0E0E] border border-white/10 aspect-square overflow-hidden">
+          <div
+            className="bg-[#0E0E0E] border border-white/10 aspect-square overflow-hidden cursor-zoom-in"
+            onMouseMove={handleImageMove}
+            onMouseLeave={handleImageLeave}
+          >
             {gallery[activeImage] && (
-              <img src={gallery[activeImage]} alt={product.name} className="w-full h-full object-cover fade-up" />
+              <img
+                src={gallery[activeImage]}
+                alt={product.name}
+                className="w-full h-full object-cover transition-transform duration-150 ease-out"
+                style={zoomStyle}
+              />
             )}
           </div>
           {gallery.length > 1 && (

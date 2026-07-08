@@ -11,6 +11,12 @@ function getTransporter() {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASSWORD,
       },
+      // Sin timeouts, un SMTP lento/bloqueado (ej. Gmail limitando por uso intenso)
+      // deja el envío colgado indefinidamente — y como los envíos se esperan (await)
+      // antes de responder, TODA la petición (login, checkout, etc.) se cuelga con él.
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
   }
   return transporter;

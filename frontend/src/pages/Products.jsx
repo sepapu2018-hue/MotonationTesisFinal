@@ -67,6 +67,7 @@ export default function Products() {
   const [specsList, setSpecsList] = useState([]);
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [highlightId, setHighlightId] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -191,10 +192,18 @@ export default function Products() {
         min_stock: Number(form.min_stock),
         specs,
       };
-      if (editing) await api.put(`/products/${editing.id}`, payload);
-      else await api.post("/products", payload);
+      let savedId;
+      if (editing) {
+        const { data } = await api.put(`/products/${editing.id}`, payload);
+        savedId = data?.id ?? editing.id;
+      } else {
+        const { data } = await api.post("/products", payload);
+        savedId = data?.id;
+      }
       setShowForm(false);
-      load();
+      await load();
+      setHighlightId(savedId);
+      setTimeout(() => setHighlightId(null), 1800);
     } catch (err) {
       setError(formatApiError(err));
     }
@@ -288,7 +297,7 @@ export default function Products() {
                 {items.map((p) => {
                   const lowStock = p.stock <= p.min_stock;
                   return (
-                    <tr key={p.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors" data-testid={`row-${p.sku}`}>
+                    <tr key={p.id} className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors ${p.id === highlightId ? "row-highlight" : ""}`} data-testid={`row-${p.sku}`}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           {p.image_url && <img src={p.image_url} alt="" className="h-10 w-10 object-cover border border-white/10" />}

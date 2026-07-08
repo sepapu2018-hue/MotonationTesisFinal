@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { Card, PageHeader, GhostButton } from "@/components/ui-kit";
 import { ChevronLeft, ChevronRight, ShieldAlert } from "lucide-react";
+import { PERMISSION_OPTIONS } from "@/pages/Users";
 
 const PAGE_SIZE = 50;
 
@@ -12,6 +13,47 @@ const ACTION_LABELS = {
   eliminar_usuario: "Eliminó usuario",
   eliminar_producto: "Eliminó producto",
 };
+
+const permLabel = (id) => PERMISSION_OPTIONS.find((p) => p.id === id)?.label || id;
+
+// Resumen legible en JSX según el tipo de acción, en vez de mostrar el JSON crudo.
+// El JSON completo queda disponible como tooltip (title) para quien lo necesite.
+function renderDetail(entry) {
+  const d = entry.details || {};
+  switch (entry.action) {
+    case "editar_permisos_usuario": {
+      const before = d.permisos_antes || [];
+      const after = d.permisos_despues || [];
+      const added = after.filter((p) => !before.includes(p)).map(permLabel);
+      const removed = before.filter((p) => !after.includes(p)).map(permLabel);
+      if (!added.length && !removed.length && d.role_antes === d.role_despues) {
+        return <span className="text-zinc-500">Sin cambios en rol/permisos</span>;
+      }
+      return (
+        <span className="space-x-2">
+          {d.role_antes !== d.role_despues && (
+            <span className="text-zinc-300">Rol: {d.role_antes} → {d.role_despues}</span>
+          )}
+          {added.length > 0 && <span className="text-emerald-400">+ {added.join(", ")}</span>}
+          {removed.length > 0 && <span className="text-red-400">− {removed.join(", ")}</span>}
+        </span>
+      );
+    }
+    case "crear_usuario":
+      return (
+        <span>
+          {d.email} como <span className="text-zinc-300">{d.role}</span>
+          {d.permissions?.length > 0 && <span className="text-zinc-500"> ({d.permissions.map(permLabel).join(", ")})</span>}
+        </span>
+      );
+    case "eliminar_usuario":
+      return <span>{d.email} <span className="text-zinc-500">({d.role})</span></span>;
+    case "eliminar_producto":
+      return <span>{d.name} <span className="text-zinc-500">— SKU {d.sku}</span></span>;
+    default:
+      return JSON.stringify(d);
+  }
+}
 
 export default function AuditLog() {
   const [entries, setEntries] = useState([]);
@@ -61,7 +103,7 @@ export default function AuditLog() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-zinc-400 text-xs max-w-[420px] truncate" title={JSON.stringify(e.details)}>
-                    {JSON.stringify(e.details)}
+                    {renderDetail(e)}
                   </td>
                 </tr>
               ))}

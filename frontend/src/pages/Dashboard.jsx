@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "@/lib/api";
 import { Badge } from "@/components/ui-kit";
+import CountUp from "@/components/CountUp";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
 import {
   Package, AlertTriangle, DollarSign, Activity, Bike, ShoppingBag, ArrowRight,
   ArrowDownToLine, ArrowUpFromLine, ClipboardCheck, TrendingUp, AlertCircle,
@@ -69,14 +71,14 @@ export default function Dashboard() {
               Valor total del inventario
             </div>
             <div className="timer text-7xl md:text-8xl lg:text-[112px] leading-[0.85] text-white">
-              {money(stats.total_value)}
+              <CountUp value={stats.total_value} format={money} duration={1200} />
             </div>
             <div className="mt-5 flex flex-wrap items-center gap-4 text-xs uppercase tracking-widest font-bold text-zinc-400">
-              <span><span className="text-white timer text-base">{stats.total_units}</span> unidades</span>
+              <span><span className="text-white timer text-base"><CountUp value={stats.total_units} /></span> unidades</span>
               <span className="text-zinc-700">·</span>
-              <span><span className="text-white timer text-base">{stats.total_products}</span> productos</span>
+              <span><span className="text-white timer text-base"><CountUp value={stats.total_products} /></span> productos</span>
               <span className="text-zinc-700">·</span>
-              <span><span className="text-white timer text-base">{stats.movements_today}</span> movs hoy</span>
+              <span><span className="text-white timer text-base"><CountUp value={stats.movements_today} /></span> movs hoy</span>
             </div>
           </div>
 
@@ -87,7 +89,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-baseline gap-3">
               <div className={`timer text-7xl md:text-8xl ${stats.low_stock_count > 0 ? "text-amber-400" : "text-emerald-400"}`} data-testid="stat-low">
-                {String(stats.low_stock_count).padStart(2, "0")}
+                <CountUp value={stats.low_stock_count} format={(n) => String(n).padStart(2, "0")} />
               </div>
               <div className="text-xs uppercase tracking-widest text-zinc-500 font-bold">
                 productos<br />en alerta
@@ -108,32 +110,110 @@ export default function Dashboard() {
       <section className="grid grid-cols-12 gap-4 mb-6" data-testid="stats-grid">
         {/* Productos totales — span 3 */}
         <Tile className="col-span-12 sm:col-span-6 lg:col-span-3" icon={Package} kicker="Productos">
-          <div className="timer text-5xl" data-testid="stat-products">{stats.total_products}</div>
+          <div className="timer text-5xl" data-testid="stat-products"><CountUp value={stats.total_products} /></div>
           <div className="text-[10px] uppercase tracking-widest text-zinc-500 mt-1">total registrados</div>
         </Tile>
 
         {/* Motos — span 2 */}
         <Tile className="col-span-6 sm:col-span-3 lg:col-span-2" icon={Bike} kicker="Motos" accent>
-          <div className="timer text-5xl text-white" data-testid="stat-motos">{stats.motos_count}</div>
+          <div className="timer text-5xl text-white" data-testid="stat-motos"><CountUp value={stats.motos_count} /></div>
         </Tile>
 
         {/* Accesorios — span 2 */}
         <Tile className="col-span-6 sm:col-span-3 lg:col-span-2" icon={ShoppingBag} kicker="Accesorios">
-          <div className="timer text-5xl" data-testid="stat-accesorios">{stats.accesorios_count}</div>
+          <div className="timer text-5xl" data-testid="stat-accesorios"><CountUp value={stats.accesorios_count} /></div>
         </Tile>
 
         {/* Unidades — span 2 */}
         <Tile className="col-span-6 sm:col-span-6 lg:col-span-2" icon={Activity} kicker="Unidades">
-          <div className="timer text-5xl" data-testid="stat-units">{stats.total_units}</div>
+          <div className="timer text-5xl" data-testid="stat-units"><CountUp value={stats.total_units} /></div>
         </Tile>
 
         {/* Valor (chip pequeño con tendencia) — span 3 */}
         <Tile className="col-span-6 sm:col-span-6 lg:col-span-3" icon={DollarSign} kicker="Valor (USD)">
-          <div className="timer text-3xl truncate" data-testid="stat-value">{money(stats.total_value)}</div>
+          <div className="timer text-3xl truncate" data-testid="stat-value"><CountUp value={stats.total_value} format={money} duration={1200} /></div>
           <div className="text-[10px] uppercase tracking-widest text-emerald-400 mt-1 flex items-center gap-1">
             <TrendingUp className="h-3 w-3" /> inventario activo
           </div>
         </Tile>
+      </section>
+
+      {/* Gráficos — composición real del catálogo y salud de stock */}
+      <section className="grid grid-cols-12 gap-4 mb-6">
+        <div className="col-span-12 lg:col-span-7 border border-white/10 bg-[#0E0E0E] p-5">
+          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#10B981] mb-4">// Catálogo por tipo</div>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart
+              data={[
+                { name: "Motos", value: stats.motos_count },
+                { name: "Accesorios", value: stats.accesorios_count },
+              ]}
+              layout="vertical"
+              margin={{ left: 8, right: 24 }}
+            >
+              <XAxis type="number" hide />
+              <YAxis
+                type="category"
+                dataKey="name"
+                width={90}
+                tick={{ fill: "#a1a1aa", fontSize: 12 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                contentStyle={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 0 }}
+                labelStyle={{ color: "#a1a1aa" }}
+                itemStyle={{ color: "#10B981" }}
+              />
+              <Bar dataKey="value" radius={[0, 2, 2, 0]} barSize={28}>
+                <Cell fill="#10B981" />
+                <Cell fill="#3f3f46" />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="col-span-12 lg:col-span-5 border border-white/10 bg-[#0E0E0E] p-5">
+          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#10B981] mb-4">// Salud de stock</div>
+          <div className="flex items-center gap-4">
+            <ResponsiveContainer width={140} height={140}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: "Saludable", value: Math.max(stats.total_products - stats.low_stock_count, 0) },
+                    { name: "En alerta", value: stats.low_stock_count },
+                  ]}
+                  dataKey="value"
+                  innerRadius={45}
+                  outerRadius={65}
+                  startAngle={90}
+                  endAngle={-270}
+                  stroke="none"
+                >
+                  <Cell fill="#10B981" />
+                  <Cell fill="#F59E0B" />
+                </Pie>
+                <Tooltip
+                  contentStyle={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 0 }}
+                  labelStyle={{ color: "#a1a1aa" }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 bg-[#10B981]" />
+                <span className="text-zinc-400">Saludable</span>
+                <span className="timer text-white ml-auto">{Math.max(stats.total_products - stats.low_stock_count, 0)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 bg-amber-500" />
+                <span className="text-zinc-400">En alerta</span>
+                <span className="timer text-white ml-auto">{stats.low_stock_count}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Dos columnas asimétricas (movs + alertas detalladas) */}

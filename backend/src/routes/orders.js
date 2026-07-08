@@ -105,20 +105,17 @@ router.post('/checkout', customerRequired, asyncHandler(async (req, res) => {
 
     await client.query('COMMIT');
 
-    // Correos "best effort": si fallan, la compra ya quedó confirmada igual,
-    // solo se registra el error sin romper el checkout.
+    // Correos "best effort" en paralelo (no en secuencia, para no sumar sus tiempos
+    // uno tras otro): si fallan, la compra ya quedó confirmada igual, solo se
+    // registra el error sin romper el checkout.
     if (mailerConfigured()) {
-      try {
-        await sendOrderConfirmationEmail(order.customer_email, order, emailItems);
-      } catch (err) {
-        console.error('Error enviando comprobante de compra:', err);
-      }
-      try {
-        const admins = await query("SELECT email FROM users WHERE role = 'admin'");
-        await sendNewOrderAdminEmail(admins.map((a) => a.email), order, emailItems);
-      } catch (err) {
-        console.error('Error notificando pedido nuevo al admin:', err);
-      }
+      await Promise.allSettled([
+        sendOrderConfirmationEmail(order.customer_email, order, emailItems)
+          .catch((err) => console.error('Error enviando comprobante de compra:', err)),
+        query("SELECT email FROM users WHERE role = 'admin'")
+          .then((admins) => sendNewOrderAdminEmail(admins.map((a) => a.email), order, emailItems))
+          .catch((err) => console.error('Error notificando pedido nuevo al admin:', err)),
+      ]);
     }
     for (const { product, previousStock } of stockAlertCandidates) {
       await checkLowStockAlert(product, previousStock);

@@ -6,6 +6,7 @@ import { useCustomer } from "@/context/CustomerContext";
 import { Package, ChevronRight, X } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { DangerButton } from "@/components/ui-kit";
+import PageLoader from "@/components/public/PageLoader";
 
 const CANCELABLE = ["pendiente", "pagado"];
 
@@ -64,7 +65,7 @@ export default function MyOrders() {
     }
   };
 
-  if (customer === null) return <div className="py-20 text-center text-zinc-500">Cargando…</div>;
+  if (customer === null) return <PageLoader />;
   if (customer === false) return <Navigate to="/cuenta/entrar?redirect=/mis-pedidos" replace />;
 
   return (
@@ -120,7 +121,7 @@ export default function MyOrders() {
             </div>
 
             {!detail ? (
-              <div className="py-10 text-center text-zinc-500 text-sm">Cargando…</div>
+              <PageLoader variant="list" />
             ) : (
               <>
                 <div className="flex items-center justify-between mb-4">

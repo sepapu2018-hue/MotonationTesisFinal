@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import api, { formatApiError } from "@/lib/api";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 import {
   ArrowRight, Zap, Shield, Truck, Award, Star, Quote,
-  Flame, Sparkles, MapPin, Phone, Mail, ShoppingCart,
+  Sparkles, MapPin, Phone, Mail, ShoppingCart,
 } from "lucide-react";
+import Reveal from "@/components/public/Reveal";
+import MotoFlyby from "@/components/public/MotoFlyby";
+import { useTilt } from "@/hooks/useTilt";
 
-const HERO_BG = "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=2000&q=80";
+const HERO_BG = "https://images.unsplash.com/photo-1611873188697-f672f072ebda?auto=format&fit=crop&w=2000&q=80";
 const COLLECTION_MOTO = "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=1400&q=80";
 const COLLECTION_GEAR = "https://images.unsplash.com/photo-1609630875171-b1321377ee65?auto=format&fit=crop&w=1400&q=80";
 
@@ -23,6 +26,57 @@ const STATS = [
 
 const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits: 0 })}`;
 
+// Reseña individual: tilt 3D sutil + estrellas que aparecen en secuencia.
+// El tilt va en un div interno (no en el que tiene "fade-up") para no pisar
+// la misma propiedad transform con dos animaciones distintas.
+function TestimonialCard({ t, i }) {
+  const tilt = useTilt(4);
+  const initials = (t.name || "")
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  return (
+    <div className="fade-up" style={{ animationDelay: `${i * 0.1}s` }}>
+      <div
+        data-testid={`testimonial-${i}`}
+        className="testimonial-card relative border border-white/10 bg-[#0E0E0E] p-7 hover:border-[#10B981] transition-colors"
+        style={tilt.style}
+        onMouseMove={tilt.onMouseMove}
+        onMouseLeave={tilt.onMouseLeave}
+      >
+        <Quote className="h-8 w-8 text-[#10B981]/30 mb-4" />
+        <p className="text-zinc-300 leading-relaxed text-sm">"{t.text}"</p>
+        <div className="mt-6 pt-5 border-t border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 shrink-0 rounded-full bg-[#10B981]/15 border border-[#10B981]/40 flex items-center justify-center text-[#10B981] font-display font-bold text-sm">
+              {initials}
+            </div>
+            <div>
+              <div className="font-display font-bold uppercase text-sm">{t.name}</div>
+              <div className="flex items-center gap-1 text-[10px] text-zinc-500 mt-0.5">
+                <MapPin className="h-2.5 w-2.5" /> {t.city}
+              </div>
+            </div>
+          </div>
+          <div className="flex">
+            {[...Array(t.rating)].map((_, si) => (
+              <Star
+                key={si}
+                className="h-3.5 w-3.5 fill-[#F59E0B] text-[#F59E0B] star-pop"
+                style={{ animationDelay: `${si * 0.08}s` }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [featured, setFeatured] = useState([]);
   const [cats, setCats] = useState([]);
@@ -30,6 +84,18 @@ export default function Home() {
   const [reviewForm, setReviewForm] = useState({ name: "", city: "", rating: 5, text: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
   const { addItem } = useCart();
+
+  // Parallax del hero: la grilla y el texto se desplazan levemente según el cursor
+  const heroRef = useRef(null);
+  const [parallax, setParallax] = useState({ x: 0, y: 0 });
+  const handleHeroMove = (e) => {
+    const rect = heroRef.current.getBoundingClientRect();
+    setParallax({
+      x: ((e.clientX - rect.left) / rect.width - 0.5) * 2,
+      y: ((e.clientY - rect.top) / rect.height - 0.5) * 2,
+    });
+  };
+  const handleHeroLeave = () => setParallax({ x: 0, y: 0 });
 
   useEffect(() => {
     api.get("/public/featured").then((r) => setFeatured(r.data)).catch((err) => toast.error(formatApiError(err)));
@@ -68,11 +134,27 @@ export default function Home() {
 
   return (
     <div>
-      {/* HERO */}
-      <section className="relative h-[85vh] min-h-[600px] overflow-hidden">
+      {/* HERO — interactivo: parallax de grilla, spotlight y barrido siguiendo el cursor */}
+      <section
+        ref={heroRef}
+        onMouseMove={handleHeroMove}
+        onMouseLeave={handleHeroLeave}
+        className="relative h-[85vh] min-h-[600px] overflow-hidden"
+        style={{ '--mx': parallax.x, '--my': parallax.y }}
+      >
         <img src={HERO_BG} alt="" className="absolute inset-0 w-full h-full object-cover scale-110 hero-zoom" />
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/20" />
-        <div className="absolute inset-0 circuit-grid opacity-50" />
+        <div
+          className="absolute inset-0 circuit-grid opacity-50 transition-transform duration-300 ease-out"
+          style={{ transform: `translate(${parallax.x * -12}px, ${parallax.y * -12}px)` }}
+        />
+        {/* Spotlight verde que sigue al cursor */}
+        <div
+          className="absolute inset-0 pointer-events-none transition-[background] duration-300 ease-out"
+          style={{ background: `radial-gradient(560px circle at ${50 + parallax.x * 22}% ${50 + parallax.y * 22}%, rgba(16,185,129,0.14), transparent 65%)` }}
+        />
+        {/* Barrido de luz estilo HUD, cruza el hero en loop */}
+        <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-[#10B981]/25 to-transparent hero-scan pointer-events-none" />
 
         <div className="relative h-full max-w-[1400px] mx-auto px-6 flex items-center">
           <div className="max-w-2xl">
@@ -89,11 +171,11 @@ export default function Home() {
             </p>
             <div className="mt-10 flex flex-wrap gap-4 fade-up" style={{ animationDelay: '0.4s' }}>
               <Link to="/tienda" data-testid="hero-shop-btn"
-                className="group bg-[#10B981] hover:bg-[#34D399] text-black font-display uppercase tracking-widest font-black px-8 py-4 transition-all flex items-center gap-3">
+                className="magnetic-btn group bg-[#10B981] hover:bg-[#34D399] text-black font-display uppercase tracking-widest font-black px-8 py-4 transition-all flex items-center gap-3">
                 Ver catálogo <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link to="/tienda?type=motocicleta"
-                className="border border-white/30 hover:border-[#10B981] hover:text-[#10B981] font-display uppercase tracking-widest font-bold px-8 py-4 transition-colors">
+                className="magnetic-btn border border-white/30 hover:border-[#10B981] hover:text-[#10B981] font-display uppercase tracking-widest font-bold px-8 py-4 transition-colors">
                 Motocicletas
               </Link>
             </div>
@@ -107,7 +189,7 @@ export default function Home() {
       </section>
 
       {/* Beneficios — banda */}
-      <section className="border-y border-white/10 bg-[#0E0E0E]">
+      <Reveal as="section" className="border-y border-white/10 bg-[#0E0E0E]">
         <div className="max-w-[1400px] mx-auto px-6 py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
           {[
             { icon: Truck, title: "Envío rápido", desc: "Todo Ecuador en 48-72h" },
@@ -115,7 +197,7 @@ export default function Home() {
             { icon: Zap, title: "Stock en vivo", desc: "Inventario en tiempo real" },
             { icon: Award, title: "Marcas premium", desc: "Solo lo mejor del mercado" },
           ].map((b, i) => (
-            <div key={i} className="flex items-center gap-4 fade-up" style={{ animationDelay: `${i * 0.1}s` }}>
+            <div key={i} className="flex items-center gap-4">
               <div className="h-12 w-12 border border-[#10B981]/30 bg-[#10B981]/5 flex items-center justify-center">
                 <b.icon className="h-5 w-5 text-[#10B981]" />
               </div>
@@ -126,7 +208,7 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </section>
+      </Reveal>
 
       {/* MARCAS — ticker infinito */}
       <section className="border-b border-white/10 bg-black py-8 overflow-hidden">
@@ -147,7 +229,7 @@ export default function Home() {
       </section>
 
       {/* COLECCIONES — split banner */}
-      <section className="max-w-[1400px] mx-auto px-6 py-20">
+      <Reveal as="section" className="max-w-[1400px] mx-auto px-6 py-20">
         <div className="flex items-end justify-between mb-10">
           <div>
             <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-2">// Colecciones</div>
@@ -182,10 +264,10 @@ export default function Home() {
             </div>
           </Link>
         </div>
-      </section>
+      </Reveal>
 
       {/* Categorías */}
-      <section className="max-w-[1400px] mx-auto px-6 pb-20">
+      <Reveal as="section" className="max-w-[1400px] mx-auto px-6 pb-20">
         <div className="flex items-end justify-between mb-10">
           <div>
             <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-2">// Categorías</div>
@@ -207,10 +289,10 @@ export default function Home() {
             </Link>
           ))}
         </div>
-      </section>
+      </Reveal>
 
       {/* Destacados con badges + quick add */}
-      <section className="max-w-[1400px] mx-auto px-6 pb-20">
+      <Reveal as="section" className="max-w-[1400px] mx-auto px-6 pb-20">
         <div className="flex items-end justify-between mb-10">
           <div>
             <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-2">// Top del mes</div>
@@ -220,9 +302,10 @@ export default function Home() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="featured-grid">
           {featured.map((p, i) => {
-            const badge = i === 0 ? "HOT" : (p.stock <= 3 ? "LAST" : i % 3 === 1 ? "NEW" : null);
-            const badgeColor = badge === "HOT" ? "bg-[#F59E0B] text-black"
-                            : badge === "LAST" ? "bg-red-500 text-white"
+            // Señales reales, no arbitrarias: igual criterio que en la Tienda
+            const isNew = p.created_at && (Date.now() - new Date(p.created_at).getTime()) < 14 * 24 * 60 * 60 * 1000;
+            const badge = p.stock <= 3 ? "LAST" : isNew ? "NEW" : null;
+            const badgeColor = badge === "LAST" ? "bg-red-500 text-white"
                             : badge === "NEW" ? "bg-[#10B981] text-black" : "";
             return (
               <Link key={p.id} to={`/producto/${p.sku}`}
@@ -230,7 +313,6 @@ export default function Home() {
                 style={{ animationDelay: `${i * 0.1}s` }}>
                 {badge && (
                   <div className={`absolute top-3 left-3 z-10 ${badgeColor} text-[10px] font-black uppercase tracking-widest px-2 py-1 flex items-center gap-1`}>
-                    {badge === "HOT" && <Flame className="h-3 w-3" />}
                     {badge === "NEW" && <Sparkles className="h-3 w-3" />}
                     {badge}
                   </div>
@@ -261,23 +343,23 @@ export default function Home() {
             );
           })}
         </div>
-      </section>
+      </Reveal>
 
       {/* STATS counter */}
-      <section className="relative border-y border-white/10 overflow-hidden">
+      <Reveal as="section" className="relative border-y border-white/10 overflow-hidden">
         <div className="absolute inset-0 diag-stripe" />
         <div className="relative max-w-[1400px] mx-auto px-6 py-16 grid grid-cols-2 md:grid-cols-4 gap-8">
           {STATS.map((s, i) => (
-            <div key={i} className="text-center fade-up" style={{ animationDelay: `${i * 0.1}s` }}>
+            <div key={i} className="text-center">
               <div className="timer text-5xl md:text-7xl text-[#10B981] leading-none">{s.value}</div>
               <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-400 mt-3 font-bold">{s.label}</div>
             </div>
           ))}
         </div>
-      </section>
+      </Reveal>
 
       {/* TESTIMONIOS */}
-      <section className="max-w-[1400px] mx-auto px-6 py-20">
+      <Reveal as="section" className="max-w-[1400px] mx-auto px-6 py-20">
         <div className="flex items-end justify-between mb-10">
           <div>
             <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-2">// Voces de la ruta</div>
@@ -306,23 +388,7 @@ export default function Home() {
               </div>
             )}
             {reviews.map((t, i) => (
-              <div key={t.id ?? i} data-testid={`testimonial-${i}`}
-                className="relative border border-white/10 bg-[#0E0E0E] p-7 hover:border-[#10B981] transition-colors fade-up"
-                style={{ animationDelay: `${i * 0.1}s` }}>
-                <Quote className="h-8 w-8 text-[#10B981]/30 mb-4" />
-                <p className="text-zinc-300 leading-relaxed text-sm">"{t.text}"</p>
-                <div className="mt-6 pt-5 border-t border-white/5 flex items-center justify-between">
-                  <div>
-                    <div className="font-display font-bold uppercase text-sm">{t.name}</div>
-                    <div className="flex items-center gap-1 text-[10px] text-zinc-500 mt-0.5">
-                      <MapPin className="h-2.5 w-2.5" /> {t.city}
-                    </div>
-                  </div>
-                  <div className="flex">
-                    {[...Array(t.rating)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-[#F59E0B] text-[#F59E0B]" />)}
-                  </div>
-                </div>
-              </div>
+              <TestimonialCard key={t.id ?? i} t={t} i={i} />
             ))}
           </div>
 
@@ -386,17 +452,17 @@ export default function Home() {
           </div>
 
         </div>
-      </section>
+      </Reveal>
 
       {/* CONTACTO RÁPIDO */}
-      <section className="max-w-[1400px] mx-auto px-6 py-20">
+      <Reveal as="section" className="max-w-[1400px] mx-auto px-6 py-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
             { icon: MapPin, title: "Visítanos", line1: "Av. Francisco de Orellana", line2: "Guayaquil · Ecuador" },
             { icon: Phone, title: "Llámanos", line1: "+593 99 999 9999", line2: "Lun a Sáb · 9:00 – 19:00" },
             { icon: Mail, title: "Escríbenos", line1: "contacto@motonation.com", line2: "Respuesta en <24h" },
           ].map((c, i) => (
-            <div key={i} className="group border border-white/10 hover:border-[#10B981] bg-[#0E0E0E] p-7 transition-colors fade-up" style={{ animationDelay: `${i * 0.1}s` }}>
+            <div key={i} className="group border border-white/10 hover:border-[#10B981] bg-[#0E0E0E] p-7 transition-colors">
               <div className="h-12 w-12 border border-[#10B981]/30 bg-[#10B981]/5 flex items-center justify-center mb-5 group-hover:bg-[#10B981] transition-colors">
                 <c.icon className="h-5 w-5 text-[#10B981] group-hover:text-black transition-colors" />
               </div>
@@ -406,12 +472,12 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </section>
+      </Reveal>
 
       {/* CTA final */}
-      <section className="relative border-t border-white/10 overflow-hidden">
+      <Reveal as="section" className="relative border-t border-white/10 overflow-hidden">
         <div className="absolute inset-0 diag-stripe" />
-        <div className="relative max-w-[1400px] mx-auto px-6 py-20 text-center">
+        <div className="relative max-w-[1400px] mx-auto px-6 pt-20 pb-12 text-center">
           <h2 className="font-display font-black text-5xl md:text-7xl uppercase leading-none">
             Listos para<br /><span className="text-[#10B981]">acelerar</span>?
           </h2>
@@ -423,7 +489,10 @@ export default function Home() {
             Empezar a comprar <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-      </section>
+        <div className="relative h-28 md:h-32">
+          <MotoFlyby />
+        </div>
+      </Reveal>
     </div>
   );
 }

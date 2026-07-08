@@ -8,6 +8,32 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+// El access token dura poco (8h) a propósito; el refresh token (7 días) existe
+// para renovarlo solo. Sin esto, cualquier sesión abierta más de 8h se cae con
+// 401 "No autenticado" en la próxima acción (ej. justo al pagar el checkout).
+let refreshPromise = null;
+
+api.interceptors.response.use(
+  (res) => res,
+  async (err) => {
+    const original = err.config;
+    const isAuthAction = original?.url?.includes("/login") || original?.url?.includes("/refresh") || original?.url?.includes("/register");
+
+    if (err.response?.status === 401 && original && !original._retry && !isAuthAction) {
+      original._retry = true;
+      const refreshUrl = window.location.pathname.startsWith("/admin") ? "/auth/refresh" : "/customer/refresh";
+      try {
+        refreshPromise = refreshPromise || api.post(refreshUrl).finally(() => { refreshPromise = null; });
+        await refreshPromise;
+        return api(original);
+      } catch {
+        // El refresh también falló: la sesión expiró de verdad, se deja fluir el 401 original.
+      }
+    }
+    return Promise.reject(err);
+  }
+);
+
 export default api;
 
 export function formatApiError(err) {

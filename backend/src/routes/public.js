@@ -9,7 +9,7 @@ const router = express.Router();
 // Catálogo público — devuelve campos seguros (protegemos la columna 'cost' por privacidad comercial)
 const publicFields = `
   id, sku, name, type, brand, model, category_id,
-  price, stock, image_url, description
+  price, stock, image_url, description, created_at
 `;
 // La ficha de detalle además expone specs (ficha técnica) e images (galería)
 const detailFields = `${publicFields}, specs, images`;

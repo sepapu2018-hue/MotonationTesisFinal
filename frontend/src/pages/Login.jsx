@@ -3,8 +3,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate, Navigate, Link } from "react-router-dom";
 import { Loader2, ShieldCheck } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import OtpInput from "@/components/public/OtpInput";
 
-const HERO = "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=1600&q=80";
+const HERO = "https://images.unsplash.com/photo-1489731007795-388eee095ff6?auto=format&fit=crop&w=1600&q=80";
 
 export default function Login() {
   const { user, login, verifyOtp, resendOtp } = useAuth();
@@ -211,18 +212,7 @@ export default function Login() {
             <div className="space-y-5">
               <div>
                 <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-2 font-bold">Código de verificación</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  required
-                  maxLength={6}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  className="w-full bg-transparent border border-white/20 px-4 py-3 text-white text-center text-2xl tracking-[0.5em] placeholder-zinc-600 focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] transition-colors"
-                  placeholder="······"
-                  data-testid="otp-code-input"
-                />
+                <OtpInput value={code} onChange={setCode} disabled={loading} />
               </div>
 
               {error && (

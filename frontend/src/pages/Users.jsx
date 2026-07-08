@@ -7,7 +7,7 @@ import Avatar from "@/components/Avatar";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { Trash2, UserPlus, Upload, X, Pencil, Edit2 } from "lucide-react";
 
-const PERMISSION_OPTIONS = [
+export const PERMISSION_OPTIONS = [
   { id: 'view_dashboard',  label: 'Ver Dashboard' },
   { id: 'view_products',   label: 'Ver Productos' },
   { id: 'view_categories', label: 'Ver Categorías' },
@@ -46,6 +46,7 @@ export default function Users() {
   const [editError, setEditError] = useState("");
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [highlightId, setHighlightId] = useState(null);
 
   const load = () => api.get("/users").then((r) => setUsers(r.data)).catch((err) => toast.error(formatApiError(err)));
   useEffect(() => { load(); }, []);
@@ -78,9 +79,11 @@ export default function Users() {
     e.preventDefault();
     setError("");
     try {
-      await api.post("/users", form);
+      const { data } = await api.post("/users", form);
       setForm({ email: "", password: "", name: "", role: "empleado", permissions: [], avatar_url: "" });
-      load();
+      await load();
+      setHighlightId(data?.id);
+      setTimeout(() => setHighlightId(null), 1800);
     } catch (err) { setError(formatApiError(err)); }
   };
 
@@ -103,9 +106,12 @@ export default function Users() {
       const payload = { ...editForm };
       if (!payload.password) delete payload.password;
       await api.put(`/users/${editing.id}`, payload);
+      const editedId = editing.id;
       setEditing(null);
-      load();
-      if (editing.id === me?.id) refresh();
+      await load();
+      setHighlightId(editedId);
+      setTimeout(() => setHighlightId(null), 1800);
+      if (editedId === me?.id) refresh();
     } catch (err) { setEditError(formatApiError(err)); }
   };
 
@@ -159,7 +165,7 @@ export default function Users() {
                 </thead>
                 <tbody>
                   {staff.map((u) => (
-                    <tr key={u.id} className="border-b border-white/5" data-testid={`user-row-${u.email}`}>
+                    <tr key={u.id} className={`border-b border-white/5 ${u.id === highlightId ? "row-highlight" : ""}`} data-testid={`user-row-${u.email}`}>
                       <td className="px-4 py-3">
                         <label className="inline-block cursor-pointer group relative" title="Cambiar foto">
                           <Avatar src={u.avatar_url} name={u.name} size={40} />

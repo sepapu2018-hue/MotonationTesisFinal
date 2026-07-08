@@ -16,6 +16,7 @@ export default function Movements() {
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [highlightId, setHighlightId] = useState(null);
 
   const load = () => api.get("/movements?limit=300").then((r) => setMovs(r.data)).catch((err) => toast.error(formatApiError(err)));
 
@@ -49,11 +50,13 @@ export default function Movements() {
       const payload = { product_id: form.product_id, type: form.type, quantity: Number(form.quantity), reason: form.reason };
       if (form.type === "ajuste") payload.direction = form.direction;
       if (form.type === "entrada" && form.supplier_id) payload.supplier_id = form.supplier_id;
-      await api.post("/movements", payload);
+      const { data } = await api.post("/movements", payload);
       setShowForm(false);
       setForm(emptyForm);
-      load();
+      await load();
       api.get("/products").then((r) => setProducts(r.data)).catch((err) => toast.error(formatApiError(err)));
+      setHighlightId(data?.id);
+      setTimeout(() => setHighlightId(null), 1800);
     } catch (err) {
       setError(formatApiError(err));
     } finally {
@@ -129,7 +132,7 @@ export default function Movements() {
                   const badgeVariant = m.type === "ajuste" ? "info" : (m.type === "entrada" ? "success" : "danger");
                   const label = m.type === "ajuste" ? `ajuste ${m.direction === "positivo" ? "(+)" : "(−)"}` : m.type;
                   return (
-                    <tr key={m.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                    <tr key={m.id} className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors ${m.id === highlightId ? "row-highlight" : ""}`}>
                       <td className="px-4 py-3 font-mono text-xs text-zinc-400">{new Date(m.created_at).toLocaleString("es")}</td>
                       <td className="px-4 py-3">
                         <Badge variant={badgeVariant}>

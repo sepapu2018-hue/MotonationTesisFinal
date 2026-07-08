@@ -3,12 +3,14 @@ import { Navigate, useNavigate } from "react-router-dom";
 import api, { formatApiError } from "@/lib/api";
 import { useCart } from "@/context/CartContext";
 import { useCustomer } from "@/context/CustomerContext";
-import { CreditCard, Check, Lock } from "lucide-react";
+import { CreditCard, Lock, Minus, Plus, X } from "lucide-react";
+import PageLoader from "@/components/public/PageLoader";
+import AnimatedCheck from "@/components/public/AnimatedCheck";
 
 const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
 
 export default function Checkout() {
-  const { items, totals, clear } = useCart();
+  const { items, totals, clear, updateQuantity, removeItem } = useCart();
   const { customer } = useCustomer();
   const navigate = useNavigate();
   const [shippingAddress, setShippingAddress] = useState(customer?.address || "");
@@ -18,7 +20,7 @@ export default function Checkout() {
   const [success, setSuccess] = useState(null);
 
   if (items.length === 0 && !success) return <Navigate to="/tienda" replace />;
-  if (customer === null) return <div className="py-20 text-center text-zinc-500">Cargando…</div>;
+  if (customer === null) return <PageLoader />;
   if (customer === false) {
     return <Navigate to="/cuenta/entrar?redirect=/checkout" replace />;
   }
@@ -47,9 +49,7 @@ export default function Checkout() {
   if (success) {
     return (
       <div className="max-w-2xl mx-auto py-20 px-6 text-center fade-up">
-        <div className="h-20 w-20 mx-auto bg-[#10B981]/15 border-2 border-[#10B981] flex items-center justify-center rounded-full mb-6">
-          <Check className="h-10 w-10 text-[#10B981]" />
-        </div>
+        <AnimatedCheck size={88} className="mb-6" />
         <h1 className="font-display font-black text-5xl uppercase">¡Pedido confirmado!</h1>
         <p className="text-zinc-400 mt-4">
           Tu pedido <span className="text-[#10B981] font-mono">{success.order_number}</span> fue procesado correctamente.
@@ -131,12 +131,38 @@ export default function Checkout() {
         <aside className="col-span-12 lg:col-span-4">
           <div className="border border-white/10 bg-[#0E0E0E] p-6 sticky top-24">
             <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#10B981] mb-4">Resumen</div>
-            <div className="space-y-2 mb-4 max-h-48 overflow-auto">
+            <div className="space-y-3 mb-4 max-h-64 overflow-auto">
               {items.map((i) => (
-                <div key={i.product_id} className="flex items-center gap-3 text-xs">
-                  <div className="timer w-8 text-zinc-500">×{i.quantity}</div>
-                  <div className="flex-1 truncate">{i.name}</div>
-                  <div className="timer">{money(i.price * i.quantity)}</div>
+                <div key={i.product_id} className="flex items-center gap-2 text-xs">
+                  <div className="flex-1 min-w-0 truncate">{i.name}</div>
+                  <div className="flex items-center border border-white/15 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(i.product_id, i.quantity - 1)}
+                      data-testid={`checkout-qty-minus-${i.sku}`}
+                      className="h-6 w-6 hover:bg-white/5"
+                    >
+                      <Minus className="h-2.5 w-2.5 mx-auto" />
+                    </button>
+                    <div className="w-6 text-center timer">{i.quantity}</div>
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(i.product_id, i.quantity + 1)}
+                      data-testid={`checkout-qty-plus-${i.sku}`}
+                      className="h-6 w-6 hover:bg-white/5"
+                    >
+                      <Plus className="h-2.5 w-2.5 mx-auto" />
+                    </button>
+                  </div>
+                  <div className="timer w-16 text-right shrink-0">{money(i.price * i.quantity)}</div>
+                  <button
+                    type="button"
+                    onClick={() => removeItem(i.product_id)}
+                    data-testid={`checkout-remove-${i.sku}`}
+                    className="text-zinc-500 hover:text-amber-400 shrink-0"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               ))}
             </div>

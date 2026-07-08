@@ -3,7 +3,7 @@ import { useCart } from "@/context/CartContext";
 import { useCustomer } from "@/context/CustomerContext";
 import BrandLogo from "@/components/BrandLogo";
 import { ShoppingCart, User, LogOut, Package, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const nav = [
   { to: "/", label: "Inicio", end: true },
@@ -17,6 +17,16 @@ export default function PublicLayout() {
   const { customer, logout } = useCustomer();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+
+  // Anima el badge del carrito ("pop") cada vez que cambia la cantidad
+  const prevCartCount = useRef(totals.count);
+  const [cartPopKey, setCartPopKey] = useState(0);
+  useEffect(() => {
+    if (totals.count !== prevCartCount.current) {
+      setCartPopKey((k) => k + 1);
+      prevCartCount.current = totals.count;
+    }
+  }, [totals.count]);
 
   const doLogout = async () => {
     await logout();
@@ -91,7 +101,10 @@ export default function PublicLayout() {
               <ShoppingCart className="h-4 w-4" />
               <span className="hidden sm:inline">Carrito</span>
               {totals.count > 0 && (
-                <span className="absolute -top-2 -right-2 bg-[#10B981] text-black text-[10px] font-black h-5 w-5 flex items-center justify-center rounded-full">
+                <span
+                  key={cartPopKey}
+                  className="absolute -top-2 -right-2 bg-[#10B981] text-black text-[10px] font-black h-5 w-5 flex items-center justify-center rounded-full cart-badge-pop"
+                >
                   {totals.count}
                 </span>
               )}

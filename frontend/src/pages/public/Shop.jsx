@@ -3,7 +3,9 @@ import { Link, useSearchParams } from "react-router-dom";
 import api, { formatApiError } from "@/lib/api";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
-import { Search, Filter, X, ShoppingCart, Flame, Sparkles } from "lucide-react";
+import { Search, Filter, X, ShoppingCart, Sparkles } from "lucide-react";
+import PageLoader from "@/components/public/PageLoader";
+import { useTilt } from "@/hooks/useTilt";
 
 const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits: 0 })}`;
 
@@ -236,7 +238,7 @@ export default function Shop() {
           </div>
 
           {loading ? (
-            <div className="py-20 text-center text-zinc-500 uppercase tracking-widest text-xs">Cargando…</div>
+            <PageLoader variant="grid" />
           ) : sorted.length === 0 ? (
             <div className="border border-white/10 bg-[#0E0E0E] py-20 text-center">
               <div className="font-display font-black text-3xl uppercase">Sin resultados</div>
@@ -244,55 +246,64 @@ export default function Shop() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="shop-grid">
-              {sorted.map((p, i) => {
-                const badge = p.stock <= 3 ? "LAST" : i === 0 ? "HOT" : i % 5 === 2 ? "NEW" : null;
-                const badgeColor = badge === "HOT" ? "bg-[#F59E0B] text-black"
-                                : badge === "LAST" ? "bg-red-500 text-white"
-                                : badge === "NEW" ? "bg-[#10B981] text-black" : "";
-                return (
-                <Link
-                  key={p.id}
-                  to={`/producto/${p.sku}`}
-                  data-testid={`product-card-${p.sku}`}
-                  className="group relative bg-[#0E0E0E] border border-white/10 hover:border-[#10B981] transition-all overflow-hidden fade-up"
-                  style={{ animationDelay: `${i * 0.04}s` }}
-                >
-                  {badge && (
-                    <div className={`absolute top-3 left-3 z-10 ${badgeColor} text-[10px] font-black uppercase tracking-widest px-2 py-1 flex items-center gap-1`}>
-                      {badge === "HOT" && <Flame className="h-3 w-3" />}
-                      {badge === "NEW" && <Sparkles className="h-3 w-3" />}
-                      {badge}
-                    </div>
-                  )}
-                  <div className="aspect-[4/3] overflow-hidden bg-black relative">
-                    {p.image_url && (
-                      <img src={p.image_url} alt={p.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                    )}
-                    <button
-                      onClick={(e) => quickAdd(e, p)}
-                      disabled={p.stock <= 0}
-                      data-testid={`quick-add-${p.sku}`}
-                      className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all bg-[#10B981] hover:bg-[#34D399] disabled:bg-zinc-700 text-black font-display uppercase tracking-widest font-black text-[10px] px-3 py-2 flex items-center gap-1.5"
-                    >
-                      <ShoppingCart className="h-3 w-3" /> Agregar
-                    </button>
-                  </div>
-                  <div className="p-4">
-                    <div className="text-[10px] uppercase tracking-widest text-zinc-500">{p.brand}</div>
-                    <div className="font-display font-bold text-base uppercase mt-1 line-clamp-1">{p.name}</div>
-                    <div className="flex items-end justify-between mt-3">
-                      <div className="timer text-2xl text-[#10B981]">{money(p.price)}</div>
-                      <div className="text-[10px] uppercase tracking-widest text-zinc-500">Stock {p.stock}</div>
-                    </div>
-                  </div>
-                </Link>
-                );
-              })}
+              {sorted.map((p, i) => (
+                <ProductCard key={p.id} p={p} i={i} onQuickAdd={quickAdd} />
+              ))}
             </div>
           )}
         </section>
       </div>
+    </div>
+  );
+}
+
+function ProductCard({ p, i, onQuickAdd }) {
+  const tilt = useTilt(6);
+  // Señales reales, no arbitrarias: "Últimas" por stock bajo real, "Nuevo" por fecha de alta real
+  const isNew = p.created_at && (Date.now() - new Date(p.created_at).getTime()) < 14 * 24 * 60 * 60 * 1000;
+  const badge = p.stock <= 3 ? "LAST" : isNew ? "NEW" : null;
+  const badgeColor = badge === "LAST" ? "bg-red-500 text-white"
+                  : badge === "NEW" ? "bg-[#10B981] text-black" : "";
+
+  return (
+    <div className="fade-up" style={{ animationDelay: `${i * 0.04}s` }}>
+    <Link
+      to={`/producto/${p.sku}`}
+      data-testid={`product-card-${p.sku}`}
+      className="group relative bg-[#0E0E0E] border border-white/10 hover:border-[#10B981] transition-all overflow-hidden [transform-style:preserve-3d]"
+      style={tilt.style}
+      onMouseMove={tilt.onMouseMove}
+      onMouseLeave={tilt.onMouseLeave}
+    >
+      {badge && (
+        <div className={`absolute top-3 left-3 z-10 ${badgeColor} text-[10px] font-black uppercase tracking-widest px-2 py-1 flex items-center gap-1`}>
+          {badge === "NEW" && <Sparkles className="h-3 w-3" />}
+          {badge}
+        </div>
+      )}
+      <div className="aspect-[4/3] overflow-hidden bg-black relative">
+        {p.image_url && (
+          <img src={p.image_url} alt={p.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+        )}
+        <button
+          onClick={(e) => onQuickAdd(e, p)}
+          disabled={p.stock <= 0}
+          data-testid={`quick-add-${p.sku}`}
+          className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all bg-[#10B981] hover:bg-[#34D399] disabled:bg-zinc-700 text-black font-display uppercase tracking-widest font-black text-[10px] px-3 py-2 flex items-center gap-1.5"
+        >
+          <ShoppingCart className="h-3 w-3" /> Agregar
+        </button>
+      </div>
+      <div className="p-4">
+        <div className="text-[10px] uppercase tracking-widest text-zinc-500">{p.brand}</div>
+        <div className="font-display font-bold text-base uppercase mt-1 line-clamp-1">{p.name}</div>
+        <div className="flex items-end justify-between mt-3">
+          <div className="timer text-2xl text-[#10B981]">{money(p.price)}</div>
+          <div className="text-[10px] uppercase tracking-widest text-zinc-500">Stock {p.stock}</div>
+        </div>
+      </div>
+    </Link>
     </div>
   );
 }

@@ -3,6 +3,8 @@ import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useCustomer } from "@/context/CustomerContext";
 import { formatApiError } from "@/lib/api";
+import PageLoader from "@/components/public/PageLoader";
+import PasswordField from "@/components/public/PasswordField";
 
 export default function Account() {
   const { customer, updateProfile } = useCustomer();
@@ -19,7 +21,7 @@ export default function Account() {
     }
   }, [customer]);
 
-  if (customer === null) return <div className="py-20 text-center text-zinc-500">Cargando…</div>;
+  if (customer === null) return <PageLoader />;
   if (customer === false) return <Navigate to="/cuenta/entrar?redirect=/mi-cuenta" replace />;
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
@@ -100,20 +102,22 @@ export default function Account() {
         <div className="h-0.5 w-12 bg-[#10B981] mt-3 mb-8" />
 
         <form onSubmit={onSubmitPwd} className="grid grid-cols-1 gap-4">
-          <label className="block">
-            <span className="block text-[10px] uppercase tracking-widest text-zinc-500 mb-1 font-bold">Contraseña actual</span>
-            <input type="password" required value={pwd.current_password}
-              onChange={(e) => setPwd({ ...pwd, current_password: e.target.value })}
-              data-testid="account-current-password"
-              className="w-full bg-transparent border border-white/15 px-3 py-2.5 text-sm focus:outline-none focus:border-[#10B981]" />
-          </label>
-          <label className="block">
-            <span className="block text-[10px] uppercase tracking-widest text-zinc-500 mb-1 font-bold">Nueva contraseña (mín 6)</span>
-            <input type="password" required minLength={6} value={pwd.new_password}
-              onChange={(e) => setPwd({ ...pwd, new_password: e.target.value })}
-              data-testid="account-new-password"
-              className="w-full bg-transparent border border-white/15 px-3 py-2.5 text-sm focus:outline-none focus:border-[#10B981]" />
-          </label>
+          <PasswordField
+            label="Contraseña actual"
+            value={pwd.current_password}
+            onChange={(e) => setPwd({ ...pwd, current_password: e.target.value })}
+            testId="account-current-password"
+            required
+          />
+          <PasswordField
+            label="Nueva contraseña (mín 6)"
+            value={pwd.new_password}
+            onChange={(e) => setPwd({ ...pwd, new_password: e.target.value })}
+            testId="account-new-password"
+            required
+            minLength={6}
+            showStrength
+          />
 
           {pwdError && <div className="border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">{pwdError}</div>}
 
