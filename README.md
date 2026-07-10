@@ -24,7 +24,12 @@ Hasta la fecha, el desarrollo de la plataforma ha avanzado significativamente, c
 - **Costeo por Promedio Ponderado:** Al registrar una entrada de stock a un costo distinto, el costo del producto se recalcula como promedio ponderado entre el stock existente y la mercadería que entra (en vez de sobrescribirlo).
 - **Módulo de Proveedores:** CRUD de proveedores, ligados opcionalmente a las entradas de stock en Movimientos (trazabilidad de "a quién se le compró").
 - **Sistema de Kárdex:** Registro histórico de entradas/salidas/ventas/ajustes por producto, con exportación a PDF.
-- **Alertas de Stock:** Panel dedicado a productos por debajo del stock mínimo configurado.
+- **Alertas de Stock:** Panel dedicado a productos por debajo del stock mínimo configurado, con notificación automática por correo a los administradores cuando un producto cae por debajo de su mínimo.
+- **Ficha Técnica y Galería de Producto:** Campos libres clave/valor (`specs`, ej. "Cilindraje: 150cc") y galería de imágenes adicionales por producto (`images`), además de la imagen de portada.
+- **Reseñas por Producto:** Además de los testimonios generales de la Home, cada producto puede tener sus propias reseñas públicas (visibles en su ficha de detalle).
+- **Reportes:** Panel de reportes de ventas por rango de fechas (pedidos, subtotal, impuestos, ingresos y top de productos vendidos).
+- **Auditoría:** Registro (`audit_log`) de acciones administrativas sensibles — creación/edición de permisos de usuarios, eliminación de usuarios y eliminación de productos — con detalle de qué cambió.
+- **Notificaciones por Correo:** Además del comprobante de compra al cliente, se notifica por correo a los administradores cuando entra un pedido nuevo y cuando un producto cae en stock bajo (best effort: si el correo falla, la operación de negocio no se bloquea).
 - **Backups:** Respaldo automático diario en Supabase (producción) + scripts propios de backup/restore manual (`npm run backup` / `npm run restore`).
 - **Catálogo Público de Productos:** Visualización de productos para clientes externos con filtros, búsqueda y detalle por SKU.
 - **Cuenta de Cliente:** Registro, login, edición de perfil y recuperación de contraseña ("olvidé mi contraseña" con token de un solo uso).
@@ -45,7 +50,6 @@ Aunque los módulos principales ya se encuentran desarrollados y operativos, aú
 - Optimización de la experiencia de navegación y búsqueda de productos.
 - Integración de métodos de pago adicionales (el checkout actual es simulado).
 - Optimización del rendimiento y tiempos de respuesta del catálogo público.
-- Envío real de correos para la recuperación de contraseña (actualmente el token se devuelve en la respuesta de desarrollo, no hay proveedor de email configurado).
 
 ## Estado General del Proyecto
 
@@ -92,13 +96,16 @@ backend/
     │   ├── tokens.js             ← sign/verify JWT, cookies httpOnly
     │   ├── asyncHandler.js       ← wrapper para handlers async
     │   ├── pricing.js            ← cálculo de subtotal/impuesto/total y número de orden
-    │   └── costing.js            ← costeo por promedio ponderado en entradas de stock
+    │   ├── costing.js            ← costeo por promedio ponderado en entradas de stock
+    │   ├── mailer.js             ← envío de correos (nodemailer/Gmail): recuperación, 2FA, comprobante de compra, notificaciones admin
+    │   ├── auditLog.js           ← helper para registrar acciones administrativas en audit_log
+    │   └── stockAlerts.js        ← dispara el correo de stock bajo cuando corresponde
     ├── db/
-    │   ├── schema.sql            ← DDL (tablas, índices, constraints)
-    │   ├── migrate.js            ← aplica el schema
+    │   ├── schema.sql            ← DDL (tablas, índices, constraints) — 100% idempotente, se aplica en cada arranque
+    │   ├── migrate.js            ← aplica el schema manualmente
     │   └── seed.js               ← carga inicial idempotente
     └── routes/
-        ├── auth.js               ← login, logout, me, refresh (staff)
+        ├── auth.js               ← login, logout, me, refresh, 2FA (staff)
         ├── users.js               ← gestión de usuarios (admin)
         ├── categories.js
         ├── suppliers.js          ← CRUD de proveedores
@@ -108,7 +115,9 @@ backend/
         ├── kardex.js              ← historial detallado de movimientos
         ├── orders.js              ← checkout, pedidos del cliente y gestión admin
         ├── customer.js            ← autenticación, perfil y recuperación de contraseña de clientes
-        ├── reviews.js             ← moderación de reseñas (admin)
+        ├── reviews.js             ← moderación de reseñas (admin) y reseñas por producto
+        ├── audit.js               ← historial de acciones administrativas (`/api/audit-log`)
+        ├── reports.js             ← reportes de ventas por rango de fechas
         └── public.js               ← catálogo, categorías, destacados y reseñas públicas (sin autenticación)
 ```
 
@@ -132,13 +141,25 @@ src/
 │   ├── CustomerContext.jsx       ← sesión global de clientes
 │   └── CartContext.jsx           ← carrito de compras
 ├── components/
-│   ├── ui/                       ← componentes UI reutilizables
+│   ├── ui/                       ← componentes UI reutilizables (shadcn/radix)
+│   ├── public/                   ← componentes de apoyo visual (públicos y admin)
+│   │   ├── PageLoader.jsx        ← skeletons de carga (`variant`: spin/grid/list/detail)
+│   │   ├── Reveal.jsx            ← fade-up al entrar en viewport (scroll reveal)
+│   │   ├── OtpInput.jsx          ← input de 6 casillas para códigos OTP/2FA
+│   │   ├── AnimatedCheck.jsx     ← check animado (confirmaciones, checkout)
+│   │   ├── AuthShell.jsx         ← layout compartido de pantallas de auth pública
+│   │   └── PasswordField.jsx     ← input de contraseña con mostrar/ocultar
+│   ├── CountUp.jsx               ← animación de conteo numérico (KPIs, precios, contadores)
 │   ├── ConfirmDialog.jsx         ← diálogo de confirmación reutilizable
 │   ├── ErrorBoundary.jsx         ← red de seguridad ante errores de React sin capturar
+│   ├── ProtectedRoute.jsx        ← guard de rutas por sesión/rol/permiso
 │   ├── Avatar.jsx
 │   ├── BrandLogo.jsx
 │   ├── Layout.jsx                ← header/nav del panel admin + outlet
 │   └── PublicLayout.jsx          ← header/footer de la tienda pública
+├── hooks/
+│   ├── use-toast.js
+│   └── useTilt.js                ← efecto de inclinación 3D al hover (tarjetas de producto)
 └── pages/
     ├── public/                   ← vistas para clientes externos
     │   ├── Cart.jsx              ← carrito de compras
@@ -150,9 +171,11 @@ src/
     │   ├── Account.jsx           ← perfil del cliente
     │   ├── Home.jsx              ← página de inicio pública (destacados + reseñas)
     │   ├── MyOrders.jsx          ← historial de pedidos del cliente
-    │   ├── ProductDetail.jsx     ← detalle de producto
+    │   ├── ProductDetail.jsx     ← detalle de producto (ficha técnica, galería, reseñas)
     │   └── Shop.jsx              ← catálogo de productos
     ├── Alerts.jsx                ← productos bajo stock mínimo
+    ├── AuditLog.jsx              ← historial de acciones administrativas
+    ├── Reports.jsx               ← reportes de ventas por rango de fechas
     ├── Categories.jsx
     ├── Suppliers.jsx             ← CRUD de proveedores
     ├── Dashboard.jsx             ← KPIs + movimientos + alertas
@@ -265,7 +288,7 @@ CORS_ORIGIN=http://localhost:3000
 REACT_APP_BACKEND_URL=http://localhost:5001
 ```
 
-> Ajusta `DB_PASSWORD` y demás valores según tu instalación local de PostgreSQL.
+> Ajusta `DB_PASSWORD` y demás valores según tu instalación local de PostgreSQL. Si tu PostgreSQL es una instancia **compartida** (ej. un servidor de laboratorio/universidad con bases de otras personas), no uses el superusuario `postgres` para `DB_USER` — crea un rol dedicado de mínimo privilegio como se explica en la sección **10. Seguridad Implementada**.
 
 > Para generar un JWT_SECRET seguro:
 > ```bash
@@ -375,7 +398,8 @@ Abre <http://localhost:3000> en el navegador. Verás la tienda pública; el pane
 | `password_resets` | id, customer_id (FK CASCADE), token_hash (hash SHA-256, unique), expires_at, used_at — tokens de recuperación de contraseña |
 | `login_otps`      | id, user_id (FK CASCADE), code_hash (hash SHA-256), expires_at, used_at, attempts — códigos de verificación (2FA) del login de staff |
 | `staff_password_resets` | id, user_id (FK CASCADE), token_hash (hash SHA-256, unique), expires_at, used_at — tokens de recuperación de contraseña del staff |
-| `reviews`          | id, name, city, rating (1-5), text, is_published, created_at — reseñas públicas de la tienda (se conservan solo las 3 más recientes) |
+| `reviews`          | id, name, city, rating (1-5), text, is_published, product_id (FK, opcional), created_at — reseñas públicas: generales (solo se conservan las 3 más recientes en la Home) o ligadas a un producto (sin límite) |
+| `audit_log`        | id, user_id (FK), user_name, action, entity_type, entity_id, details (jsonb), created_at — auditoría de acciones administrativas sensibles |
 
 Ver `backend/src/db/schema.sql` para el DDL completo (incluye `CHECK` constraints, FKs, índices).
 
@@ -384,6 +408,8 @@ Ver `backend/src/db/schema.sql` para el DDL completo (incluye `CHECK` constraint
 ### 6.1. Respaldo y recuperación de datos (backups)
 
 **En producción (Supabase):** la base de datos de producción vive en Supabase (ver `DATABASE_URL` en `backend/.env`). Supabase toma backups automáticos diarios de la base completa; en el plan gratuito la retención es de 7 días y no incluye restauración point-in-time (eso es solo de los planes pagos). Se pueden descargar/gestionar desde el panel de Supabase → **Database → Backups**.
+
+> Nota: tanto en desarrollo como en producción, la conexión de la API usa un rol de base de datos de mínimo privilegio (no el superusuario) — ver **10. Seguridad Implementada**.
 
 **Backup manual (local o antes de una entrega/demo):** además del backup automático de Supabase, el proyecto incluye dos scripts propios en `backend/scripts/` que no dependen de tener `pg_dump` instalado:
 
@@ -459,8 +485,20 @@ npm run restore -- backups/backup_2026-07-04T23-23-06-148Z.json   # restaura un 
 
 | Método | Ruta                  | Descripción                    | Rol   |
 |--------|-----------------------|-----------------------------------|-------|
-| GET    | `/api/reviews`        | Listar todas las reseñas         | autent. |
+| GET    | `/api/reviews`        | Listar todas las reseñas (generales y por producto) | autent. |
 | DELETE | `/api/reviews/:id`    | Eliminar una reseña               | autent. |
+
+### Auditoría (Admin)
+
+| Método | Ruta                          | Descripción                                       | Rol     |
+|--------|-------------------------------|------------------------------------------------------|---------|
+| GET    | `/api/audit-log`             | Historial paginado de acciones administrativas (`?page`/`?page_size`) | autent. |
+
+### Reportes (Admin)
+
+| Método | Ruta                          | Descripción                                       | Rol     |
+|--------|-------------------------------|------------------------------------------------------|---------|
+| GET    | `/api/reports/sales`         | Reporte de ventas por rango de fechas (`?from=YYYY-MM-DD&to=YYYY-MM-DD`): pedidos, subtotal, impuestos, ingresos y top de productos | autent. |
 
 ### E-commerce (Clientes)
 
@@ -579,6 +617,7 @@ curl -b cookies.txt $API/api/products | head
 - Protección **CSRF**: toda petición que cambia estado (POST/PUT/PATCH/DELETE) y trae cabecera `Origin` o `Referer` debe coincidir con un origen permitido (la misma lista blanca que usa CORS); si no matchea, se rechaza con `403`. Las peticiones sin esas cabeceras (clientes no-navegador) no se bloquean, porque un ataque CSRF real siempre parte de un navegador y esas cabeceras las pone el navegador, no el atacante.
 - Reglas de negocio a nivel de API: nadie puede eliminar su propia cuenta ni dejar el sistema sin administradores (ni por edición de rol ni por borrado).
 - Validación de payloads con **zod** en todas las rutas que escriben en la base de datos.
+- **Principio de mínimo privilegio a nivel de base de datos:** la API se conecta con un rol de PostgreSQL dedicado (`motonation_app`), no con el superusuario (`postgres`). Este rol es `NOSUPERUSER`, `NOCREATEDB`, `NOCREATEROLE`, y solo tiene permisos de lectura/escritura sobre las tablas del propio esquema (además de ser dueño de ellas, para que las migraciones idempotentes del arranque puedan aplicarse). Así, si el backend llegara a verse comprometido, el daño queda contenido a esta base de datos y no se extiende al resto del servidor (relevante porque el PostgreSQL de desarrollo es una instancia compartida con otras bases).
 
 ## 11. Para Despliegue en Producción
 
@@ -586,8 +625,8 @@ curl -b cookies.txt $API/api/products | head
 - Las cookies usan `SameSite=None; Secure=true`, requieren **HTTPS**.
 - Cambiar `JWT_SECRET`, credenciales de admin y contraseña de base de datos antes de exponer.
 - Usar `npm start` (no `dev`).
-- Configurar un proveedor de email real para la recuperación de contraseña (hoy el token se devuelve en la respuesta, solo apto para desarrollo).
-- Considerar PM2 o systemd para mantener el proceso vivo.
+- El envío de correos (recuperación de contraseña, 2FA, comprobantes de compra, notificaciones de pedido/stock bajo) ya usa un proveedor real (Gmail SMTP vía `nodemailer`, `GMAIL_USER`/`GMAIL_APP_PASSWORD`); si `DATABASE_URL` cambia de proyecto/Supabase o se despliega en otra cuenta, solo hace falta configurar esas dos variables — si faltan, el sistema vuelve automáticamente al modo de desarrollo (el token/código se devuelve en la respuesta en vez de enviarse por correo).
+- Considerar PM2 o systemd para mantener el proceso vivo (no aplica si se despliega como funciones serverless, ver `backend/vercel.json`).
 
 ---
 
