@@ -8,7 +8,6 @@ import {
   Sparkles, MapPin, Phone, Mail, ShoppingCart,
 } from "lucide-react";
 import Reveal from "@/components/public/Reveal";
-import MotoFlyby from "@/components/public/MotoFlyby";
 import { useTilt } from "@/hooks/useTilt";
 
 const HERO_BG = "https://images.unsplash.com/photo-1611873188697-f672f072ebda?auto=format&fit=crop&w=2000&q=80";
@@ -474,10 +473,11 @@ export default function Home() {
         </div>
       </Reveal>
 
-      {/* CTA final */}
-      <Reveal as="section" className="relative border-t border-white/10 overflow-hidden">
-        <div className="absolute inset-0 diag-stripe" />
-        <div className="relative max-w-[1400px] mx-auto px-6 pt-20 pb-12 text-center">
+      {/* CTA final — sin fade-up: el titulo queda fijo (nada de "letras raras"
+          a medio transicionar), el movimiento va solo en las lineas de fondo */}
+      <section className="relative border-t border-white/10 overflow-hidden">
+        <div className="absolute inset-0 diag-stripe diag-stripe-animated" />
+        <div className="relative max-w-[1400px] mx-auto px-6 py-20 text-center">
           <h2 className="font-display font-black text-5xl md:text-7xl uppercase leading-none">
             Listos para<br /><span className="text-[#10B981]">acelerar</span>?
           </h2>
@@ -489,10 +489,7 @@ export default function Home() {
             Empezar a comprar <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <div className="relative h-28 md:h-32">
-          <MotoFlyby />
-        </div>
-      </Reveal>
+      </section>
     </div>
   );
 }

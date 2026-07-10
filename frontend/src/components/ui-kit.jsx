@@ -1,3 +1,5 @@
+import CountUp from "@/components/CountUp";
+
 export function PageHeader({ kicker, title, actions, testid, count }) {
   return (
     <div className="flex items-end justify-between gap-4 mb-6" data-testid={testid}>
@@ -5,7 +7,11 @@ export function PageHeader({ kicker, title, actions, testid, count }) {
         {kicker && <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-2">// {kicker}</div>}
         <h1 className="font-display font-black text-5xl uppercase leading-none tracking-tight flex items-end gap-3">
           {title}
-          {count != null && <span className="timer text-2xl text-zinc-600">[{String(count).padStart(3, "0")}]</span>}
+          {count != null && (
+            <span className="timer text-2xl text-zinc-600">
+              [<CountUp value={count} format={(n) => String(n).padStart(3, "0")} />]
+            </span>
+          )}
         </h1>
       </div>
       {actions && <div className="flex items-center gap-3">{actions}</div>}
@@ -49,8 +55,8 @@ export function DangerButton({ children, className = "", testid, ...rest }) {
   );
 }
 
-export function Card({ children, className = "" }) {
-  return <div className={`bg-[#141414] border border-white/10 ${className}`}>{children}</div>;
+export function Card({ children, className = "", ...rest }) {
+  return <div className={`bg-[#141414] border border-white/10 ${className}`} {...rest}>{children}</div>;
 }
 
 export function Badge({ children, variant = "default" }) {

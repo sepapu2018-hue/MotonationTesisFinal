@@ -114,6 +114,13 @@ body {
     );
 }
 
+/* Variante con movimiento: las lineas fluyen en diagonal en loop continuo */
+@keyframes diag-stripe-flow {
+    from { background-position: 0 0; }
+    to   { background-position: 340px 340px; }
+}
+.diag-stripe-animated { animation: diag-stripe-flow 22s linear infinite; }
+
 @keyframes pulse-accent {
     0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45); }
     50% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
@@ -150,28 +157,6 @@ body {
     transform: translate(calc(var(--mx, 0) * 6px), calc(var(--my, 0) * 6px));
     transition: transform 0.15s ease-out;
 }
-
-/* Moto que cruza la pantalla en la seccion CTA final */
-.moto-flip { transform: scaleX(-1); }
-
-@keyframes moto-flyby {
-    0%   { transform: translateX(-20vw) translateY(0) rotate(0deg); opacity: 0; }
-    8%   { opacity: 1; }
-    20%  { transform: translateX(5vw) translateY(-4px) rotate(-1deg); }
-    50%  { transform: translateX(50vw) translateY(0) rotate(0deg); }
-    80%  { transform: translateX(95vw) translateY(-3px) rotate(1deg); }
-    88%  { opacity: 1; }
-    100% { transform: translateX(115vw) translateY(0) rotate(0deg); opacity: 0; }
-}
-.moto-flyby { animation: moto-flyby 3.4s cubic-bezier(0.45, 0, 0.2, 1) forwards; }
-
-@keyframes moto-flyby-trail {
-    0%   { transform: translateX(-20vw) scaleX(0.3); opacity: 0; }
-    10%  { opacity: 0.9; }
-    85%  { opacity: 0.9; }
-    100% { transform: translateX(115vw) scaleX(0.3); opacity: 0; }
-}
-.moto-flyby-trail { animation: moto-flyby-trail 3.4s cubic-bezier(0.45, 0, 0.2, 1) forwards; }
 
 /* Check animado (compra confirmada): se dibuja el circulo y despues el tilde */
 .check-circle {

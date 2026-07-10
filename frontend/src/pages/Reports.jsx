@@ -4,6 +4,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import api, { formatApiError } from "@/lib/api";
 import { Card, PageHeader, PrimaryButton, Field, inputClass } from "@/components/ui-kit";
+import PageLoader from "@/components/public/PageLoader";
+import CountUp from "@/components/CountUp";
 import { Download, TrendingUp } from "lucide-react";
 
 const money = (n) => `$${Number(n || 0).toLocaleString("es", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -108,23 +110,29 @@ export default function Reports() {
         </form>
       </Card>
 
-      {report && (
+      {loading && (
+        <Card className="p-6 mb-6"><PageLoader variant="list" /></Card>
+      )}
+
+      {report && !loading && (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {[
-              { label: "Pedidos", value: report.order_count, testid: "report-order-count" },
-              { label: "Subtotal", value: money(report.subtotal) },
-              { label: "Impuestos", value: money(report.tax) },
-              { label: "Total vendido", value: money(report.revenue), highlight: true },
+              { label: "Pedidos", value: report.order_count, format: (n) => n, testid: "report-order-count" },
+              { label: "Subtotal", value: report.subtotal, format: money },
+              { label: "Impuestos", value: report.tax, format: money },
+              { label: "Total vendido", value: report.revenue, format: money, highlight: true },
             ].map((k, i) => (
-              <Card key={i} className="p-5">
+              <Card key={i} className="p-5 fade-up" style={{ animationDelay: `${i * 0.08}s` }}>
                 <div className="text-[10px] uppercase tracking-widest text-zinc-500">{k.label}</div>
-                <div className={`timer text-3xl mt-1 ${k.highlight ? "text-[#10B981]" : ""}`} data-testid={k.testid}>{k.value}</div>
+                <div className={`timer text-3xl mt-1 ${k.highlight ? "text-[#10B981]" : ""}`} data-testid={k.testid}>
+                  <CountUp value={k.value} format={k.format} />
+                </div>
               </Card>
             ))}
           </div>
 
-          <Card>
+          <Card className="fade-up" style={{ animationDelay: "0.3s" }}>
             <div className="flex items-center gap-2 px-4 pt-4 text-[10px] font-mono uppercase tracking-[0.3em] text-[#10B981]">
               <TrendingUp className="h-3.5 w-3.5" /> Productos más vendidos
             </div>
@@ -140,7 +148,7 @@ export default function Reports() {
                 </thead>
                 <tbody>
                   {report.top_products.map((p) => (
-                    <tr key={p.product_sku} className="border-b border-white/5">
+                    <tr key={p.product_sku} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                       <td className="px-4 py-3 font-semibold">{p.product_name}</td>
                       <td className="px-4 py-3 font-mono text-xs text-zinc-400">{p.product_sku}</td>
                       <td className="px-4 py-3 text-right timer text-lg">{p.quantity}</td>

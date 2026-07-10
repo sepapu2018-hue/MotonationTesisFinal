@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { PrimaryButton, inputClass } from "@/components/ui-kit";
+import PageLoader from "@/components/public/PageLoader";
+import CountUp from "@/components/CountUp";
 import { Search, FileText, Truck } from "lucide-react";
 
 const money = (n) => `$${Number(n || 0).toLocaleString("es", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
@@ -22,6 +24,7 @@ export default function Orders() {
   const [q, setQ] = useState("");
   const [statusDraft, setStatusDraft] = useState("");
   const [saving, setSaving] = useState(false);
+  const [highlightId, setHighlightId] = useState(null);
 
   const load = () => api.get("/orders").then((r) => setOrders(r.data)).catch((err) => toast.error(formatApiError(err)));
   useEffect(() => { load(); }, []);
@@ -41,7 +44,9 @@ export default function Orders() {
       await api.put(`/orders/${selected.id}/status`, { status: statusDraft });
       toast.success("Estado del pedido actualizado");
       setDetail((d) => ({ ...d, status: statusDraft }));
-      load();
+      await load();
+      setHighlightId(selected.id);
+      setTimeout(() => setHighlightId(null), 1800);
     } catch (err) {
       toast.error(formatApiError(err));
     } finally {
@@ -81,7 +86,7 @@ export default function Orders() {
                   key={o.id}
                   onClick={() => openDetail(o)}
                   data-testid={`order-row-${o.order_number}`}
-                  className={`w-full text-left px-4 py-3 border-l-2 border-b border-white/5 grid grid-cols-[1fr,auto] gap-2 items-center ${selected?.id === o.id ? "border-l-[#10B981] bg-[#10B981]/5" : "border-l-transparent"}`}
+                  className={`w-full text-left px-4 py-3 border-l-2 border-b border-white/5 grid grid-cols-[1fr,auto] gap-2 items-center transition-colors ${selected?.id === o.id ? "border-l-[#10B981] bg-[#10B981]/5" : "border-l-transparent hover:bg-white/[0.02]"} ${o.id === highlightId ? "row-highlight" : ""}`}
                 >
                   <div className="min-w-0">
                     <div className="text-sm font-semibold font-mono truncate">{o.order_number}</div>
@@ -107,9 +112,11 @@ export default function Orders() {
               <div className="font-display font-bold text-2xl uppercase">Selecciona un pedido</div>
             </div>
           ) : !detail ? (
-            <div className="border border-white/10 bg-[#0E0E0E] p-16 text-center text-zinc-500 text-sm">Cargando…</div>
+            <div className="border border-white/10 bg-[#0E0E0E] p-6">
+              <PageLoader variant="detail" />
+            </div>
           ) : (
-            <div className="border border-white/10 bg-[#0E0E0E] p-6 space-y-6">
+            <div className="border border-white/10 bg-[#0E0E0E] p-6 space-y-6 fade-up">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <div className="text-[10px] uppercase tracking-widest text-zinc-500">Pedido</div>
@@ -154,7 +161,7 @@ export default function Orders() {
                 <div className="flex justify-between"><span className="text-zinc-400">IVA</span><span className="timer">{money(detail.tax)}</span></div>
                 <div className="flex justify-between border-t border-white/10 pt-2 items-end">
                   <span className="font-display font-bold uppercase">Total</span>
-                  <span className="timer text-2xl text-[#10B981]">{money(detail.total)}</span>
+                  <span className="timer text-2xl text-[#10B981]"><CountUp value={detail.total} format={money} /></span>
                 </div>
               </div>
 

@@ -4,6 +4,8 @@ import api, { formatApiError } from "@/lib/api";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Search, FileText, ArrowDownToLine, ArrowUpFromLine, ShoppingCart, ClipboardCheck, Download, Printer } from "lucide-react";
+import PageLoader from "@/components/public/PageLoader";
+import CountUp from "@/components/CountUp";
 
 const money = (n) => `$${Number(n || 0).toLocaleString("es", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
 
@@ -31,13 +33,19 @@ export default function Kardex() {
   const [products, setProducts] = useState([]);
   const [selected, setSelected] = useState(null);
   const [data, setData] = useState(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [q, setQ] = useState("");
 
   useEffect(() => { api.get("/products").then((r) => setProducts(r.data)).catch((err) => toast.error(formatApiError(err))); }, []);
 
   useEffect(() => {
     if (!selected) { setData(null); return; }
-    api.get(`/kardex/${selected.id}`).then((r) => setData(r.data)).catch((err) => toast.error(formatApiError(err)));
+    setData(null);
+    setLoadingDetail(true);
+    api.get(`/kardex/${selected.id}`)
+      .then((r) => setData(r.data))
+      .catch((err) => toast.error(formatApiError(err)))
+      .finally(() => setLoadingDetail(false));
   }, [selected]);
 
   const filtered = products.filter((p) =>
@@ -190,7 +198,7 @@ export default function Kardex() {
           </div>
           <div className="border border-white/10 bg-[#0E0E0E] max-h-[70vh] overflow-auto">
             {filtered.map((p) => (
-              <button key={p.id} onClick={() => setSelected(p)} className={`w-full text-left px-4 py-3 border-l-2 border-b border-white/5 ${selected?.id === p.id ? "border-l-[#10B981] bg-[#10B981]/5" : "border-l-transparent"}`}>
+              <button key={p.id} onClick={() => setSelected(p)} className={`w-full text-left px-4 py-3 border-l-2 border-b border-white/5 transition-colors ${selected?.id === p.id ? "border-l-[#10B981] bg-[#10B981]/5" : "border-l-transparent hover:bg-white/[0.02]"}`}>
                 <div className="text-sm font-semibold truncate">{p.name}</div>
                 <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-mono">{p.sku} · stock {p.stock}</div>
               </button>
@@ -199,13 +207,17 @@ export default function Kardex() {
         </aside>
 
         <section className="col-span-12 lg:col-span-9">
-          {!data ? (
+          {loadingDetail ? (
+            <div className="border border-white/10 bg-[#0E0E0E] p-5 mb-4">
+              <PageLoader variant="detail" />
+            </div>
+          ) : !data ? (
             <div className="border border-white/10 bg-[#0E0E0E] p-16 text-center">
               <FileText className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
               <div className="font-display font-bold text-2xl uppercase">Selecciona un producto</div>
             </div>
           ) : (
-            <div className="border border-white/10 bg-[#0E0E0E] p-5 mb-4">
+            <div className="border border-white/10 bg-[#0E0E0E] p-5 mb-4 fade-up">
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <div className="text-[10px] uppercase tracking-widest text-zinc-500">{data.product.brand}</div>
@@ -213,10 +225,10 @@ export default function Kardex() {
                     <div className="text-xs font-mono text-zinc-500 mt-1">{data.product.sku}</div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-right">
-                    <div><div className="text-[10px] uppercase tracking-widest text-zinc-500">Stock</div><div className="timer text-2xl">{data.product.current_stock}</div></div>
-                    <div><div className="text-[10px] uppercase tracking-widest text-zinc-500">Costo prom.</div><div className="timer text-2xl text-amber-400">{money(data.product.avg_cost)}</div></div>
-                    <div><div className="text-[10px] uppercase tracking-widest text-zinc-500">Costo actual</div><div className="timer text-2xl">{money(data.product.current_cost)}</div></div>
-                    <div><div className="text-[10px] uppercase tracking-widest text-zinc-500">Precio venta</div><div className="timer text-2xl text-[#10B981]">{money(data.product.current_price)}</div></div>
+                    <div><div className="text-[10px] uppercase tracking-widest text-zinc-500">Stock</div><div className="timer text-2xl"><CountUp value={data.product.current_stock} /></div></div>
+                    <div><div className="text-[10px] uppercase tracking-widest text-zinc-500">Costo prom.</div><div className="timer text-2xl text-amber-400"><CountUp value={data.product.avg_cost} format={money} /></div></div>
+                    <div><div className="text-[10px] uppercase tracking-widest text-zinc-500">Costo actual</div><div className="timer text-2xl"><CountUp value={data.product.current_cost} format={money} /></div></div>
+                    <div><div className="text-[10px] uppercase tracking-widest text-zinc-500">Precio venta</div><div className="timer text-2xl text-[#10B981]"><CountUp value={data.product.current_price} format={money} /></div></div>
                 </div>
               </div>
             </div>
@@ -248,7 +260,7 @@ export default function Kardex() {
                       const meta = metaFor(e);
                       const Icon = meta.icon;
                       return (
-                        <tr key={e.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                        <tr key={e.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                           <td className="px-4 py-3 text-zinc-400 font-mono text-xs">
                             {new Date(e.created_at).toLocaleDateString("es")}
                           </td>

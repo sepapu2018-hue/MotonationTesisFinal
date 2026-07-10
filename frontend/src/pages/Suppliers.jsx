@@ -4,6 +4,7 @@ import api, { formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Card, PageHeader, PrimaryButton, Field, inputClass } from "@/components/ui-kit";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import PageLoader from "@/components/public/PageLoader";
 import { Trash2, Plus, Pencil, Check, X } from "lucide-react";
 
 const emptyForm = { name: "", contact: "", phone: "", email: "" };
@@ -12,6 +13,7 @@ export default function Suppliers() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -19,17 +21,24 @@ export default function Suppliers() {
   const [editError, setEditError] = useState("");
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [highlightId, setHighlightId] = useState(null);
 
-  const load = () => api.get("/suppliers").then((r) => setItems(r.data)).catch((err) => toast.error(formatApiError(err)));
+  const load = () => api.get("/suppliers").then((r) => setItems(r.data)).catch((err) => toast.error(formatApiError(err))).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
+
+  const flashHighlight = (id) => {
+    setHighlightId(id);
+    setTimeout(() => setHighlightId(null), 1800);
+  };
 
   const create = async (e) => {
     e.preventDefault();
     setError("");
     try {
-      await api.post("/suppliers", form);
+      const { data } = await api.post("/suppliers", form);
       setForm(emptyForm);
-      load();
+      await load();
+      flashHighlight(data?.id);
     } catch (err) { setError(formatApiError(err)); }
   };
 
@@ -64,7 +73,8 @@ export default function Suppliers() {
     try {
       await api.put(`/suppliers/${id}`, editForm);
       setEditingId(null);
-      load();
+      await load();
+      flashHighlight(id);
     } catch (err) { setEditError(formatApiError(err)); }
   };
 
@@ -74,7 +84,10 @@ export default function Suppliers() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
-          <Card>
+          <Card className="fade-up">
+            {loading ? (
+              <div className="p-6"><PageLoader variant="list" /></div>
+            ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm" data-testid="suppliers-table">
                 <thead className="border-b border-white/10">
@@ -88,7 +101,7 @@ export default function Suppliers() {
                 </thead>
                 <tbody>
                   {items.map((s) => (
-                    <tr key={s.id} className="border-b border-white/5">
+                    <tr key={s.id} className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors ${s.id === highlightId ? "row-highlight" : ""}`}>
                       {editingId === s.id ? (
                         <>
                           <td className="px-4 py-3">
@@ -133,18 +146,19 @@ export default function Suppliers() {
                 </tbody>
               </table>
             </div>
+            )}
           </Card>
         </div>
 
         {isAdmin && (
-          <Card className="p-6">
+          <Card className="p-6 fade-up" style={{ animationDelay: "0.1s" }}>
             <h3 className="font-display uppercase font-bold tracking-wider text-lg mb-4">Nuevo Proveedor</h3>
             <form onSubmit={create} className="space-y-4">
               <Field label="Nombre"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass()} data-testid="sup-name" /></Field>
               <Field label="Contacto"><input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} className={inputClass()} data-testid="sup-contact" /></Field>
               <Field label="Teléfono"><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass()} data-testid="sup-phone" /></Field>
               <Field label="Correo"><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass()} data-testid="sup-email" /></Field>
-              {error && <div className="border border-[#10B981]/40 bg-[#10B981]/10 px-3 py-2 text-sm text-amber-400">{error}</div>}
+              {error && <div className="border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">{error}</div>}
               <PrimaryButton type="submit" testid="sup-create" className="w-full">
                 <Plus className="h-4 w-4 inline -mt-0.5 mr-1" /> Crear
               </PrimaryButton>

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import api, { formatApiError } from "@/lib/api";
 import { Badge } from "@/components/ui-kit";
+import PageLoader from "@/components/public/PageLoader";
+import CountUp from "@/components/CountUp";
 import { AlertTriangle, AlertCircle } from "lucide-react";
 
 export default function Alerts() {
@@ -18,11 +20,11 @@ export default function Alerts() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Si aún está cargando, mostramos un indicador neutro
+  // Si aún está cargando, mostramos esqueletos con la forma real del grid
   if (loading) {
     return (
-      <div className="max-w-[1600px] mx-auto px-6 py-20 text-center text-zinc-500 uppercase tracking-widest font-mono">
-        Cargando alertas...
+      <div className="max-w-[1600px] mx-auto px-6 py-8">
+        <PageLoader variant="grid" />
       </div>
     );
   }
@@ -55,7 +57,8 @@ export default function Alerts() {
           {items.map((p, idx) => (
             <div
               key={p.id}
-              className={`${idx === 0 ? "col-span-12 lg:col-span-8" : "col-span-12 md:col-span-6 lg:col-span-4"} border border-amber-500/30 bg-amber-500/[0.03] p-5`}
+              className={`${idx === 0 ? "col-span-12 lg:col-span-8" : "col-span-12 md:col-span-6 lg:col-span-4"} border border-amber-500/30 bg-amber-500/[0.03] p-5 transition-colors hover:border-amber-500/60 hover:bg-amber-500/[0.06] fade-up`}
+              style={{ animationDelay: `${idx * 0.06}s` }}
             >
               <div className="flex items-start gap-4">
                 <div className="h-12 w-12 bg-amber-500/10 border border-amber-500/40 flex items-center justify-center pulse-accent shrink-0">
@@ -67,15 +70,15 @@ export default function Alerts() {
                   <div className="mt-4 flex items-end gap-6 flex-wrap">
                     <div>
                       <div className="text-[10px] uppercase tracking-widest text-zinc-500">Actual</div>
-                      <div className="timer text-4xl text-amber-400">{p.stock}</div>
+                      <div className="timer text-4xl text-amber-400"><CountUp value={p.stock} /></div>
                     </div>
                     <div>
                       <div className="text-[10px] uppercase tracking-widest text-zinc-500">Mínimo</div>
-                      <div className="timer text-4xl text-zinc-400">{p.min_stock}</div>
+                      <div className="timer text-4xl text-zinc-400"><CountUp value={p.min_stock} /></div>
                     </div>
                     <div>
                       <div className="text-[10px] uppercase tracking-widest text-zinc-500">Faltan</div>
-                      <div className="timer text-4xl text-amber-400">{Math.max(1, p.min_stock - p.stock + 1)}</div>
+                      <div className="timer text-4xl text-amber-400"><CountUp value={Math.max(1, p.min_stock - p.stock + 1)} /></div>
                     </div>
                     {/* Asegúrate de que Badge soporte el variant="danger" en ui-kit */}
                     <Badge variant="danger">Crítico</Badge>

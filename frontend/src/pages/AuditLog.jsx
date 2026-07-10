@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { Card, PageHeader, GhostButton } from "@/components/ui-kit";
+import PageLoader from "@/components/public/PageLoader";
 import { ChevronLeft, ChevronRight, ShieldAlert } from "lucide-react";
 import { PERMISSION_OPTIONS } from "@/pages/Users";
 
@@ -59,6 +60,7 @@ export default function AuditLog() {
   const [entries, setEntries] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
@@ -67,6 +69,8 @@ export default function AuditLog() {
       setTotal(data.total);
     } catch (err) {
       toast.error(formatApiError(err));
+    } finally {
+      setLoading(false);
     }
   }, [page]);
 
@@ -79,7 +83,10 @@ export default function AuditLog() {
         Registro de acciones administrativas: creación/edición de permisos de usuarios y eliminación de productos.
       </p>
 
-      <Card>
+      <Card className="fade-up">
+        {loading ? (
+          <div className="p-6"><PageLoader variant="list" /></div>
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm" data-testid="audit-log-table">
             <thead className="border-b border-white/10">
@@ -92,7 +99,7 @@ export default function AuditLog() {
             </thead>
             <tbody>
               {entries.map((e) => (
-                <tr key={e.id} className="border-b border-white/5">
+                <tr key={e.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                   <td className="px-4 py-3 font-mono text-xs text-zinc-400 whitespace-nowrap">
                     {new Date(e.created_at).toLocaleString("es")}
                   </td>
@@ -115,6 +122,7 @@ export default function AuditLog() {
             </tbody>
           </table>
         </div>
+        )}
 
         {total > PAGE_SIZE && (
           <div className="flex items-center justify-between gap-4 px-4 py-3 border-t border-white/10 text-sm">

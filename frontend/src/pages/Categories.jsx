@@ -4,12 +4,14 @@ import api, { formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Card, PageHeader, PrimaryButton, Field, inputClass } from "@/components/ui-kit";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import PageLoader from "@/components/public/PageLoader";
 import { Trash2, Plus, Pencil, Check, X } from "lucide-react";
 
 export default function Categories() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const [cats, setCats] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ name: "", description: "" });
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -17,17 +19,24 @@ export default function Categories() {
   const [editError, setEditError] = useState("");
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [highlightId, setHighlightId] = useState(null);
 
-  const load = () => api.get("/categories").then((r) => setCats(r.data)).catch((err) => toast.error(formatApiError(err)));
+  const load = () => api.get("/categories").then((r) => setCats(r.data)).catch((err) => toast.error(formatApiError(err))).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
+
+  const flashHighlight = (id) => {
+    setHighlightId(id);
+    setTimeout(() => setHighlightId(null), 1800);
+  };
 
   const create = async (e) => {
     e.preventDefault();
     setError("");
     try {
-      await api.post("/categories", form);
+      const { data } = await api.post("/categories", form);
       setForm({ name: "", description: "" });
-      load();
+      await load();
+      flashHighlight(data?.id);
     } catch (err) { setError(formatApiError(err)); }
   };
 
@@ -62,7 +71,8 @@ export default function Categories() {
     try {
       await api.put(`/categories/${id}`, editForm);
       setEditingId(null);
-      load();
+      await load();
+      flashHighlight(id);
     } catch (err) { setEditError(formatApiError(err)); }
   };
 
@@ -72,7 +82,10 @@ export default function Categories() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
-          <Card>
+          <Card className="fade-up">
+            {loading ? (
+              <div className="p-6"><PageLoader variant="list" /></div>
+            ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm" data-testid="categories-table">
                 <thead className="border-b border-white/10">
@@ -84,7 +97,7 @@ export default function Categories() {
                 </thead>
                 <tbody>
                   {cats.map((c) => (
-                    <tr key={c.id} className="border-b border-white/5">
+                    <tr key={c.id} className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors ${c.id === highlightId ? "row-highlight" : ""}`}>
                       {editingId === c.id ? (
                         <>
                           <td className="px-4 py-3">
@@ -136,16 +149,17 @@ export default function Categories() {
                 </tbody>
               </table>
             </div>
+            )}
           </Card>
         </div>
 
         {isAdmin && (
-          <Card className="p-6">
+          <Card className="p-6 fade-up" style={{ animationDelay: "0.1s" }}>
             <h3 className="font-display uppercase font-bold tracking-wider text-lg mb-4">Nueva Categoría</h3>
             <form onSubmit={create} className="space-y-4">
               <Field label="Nombre"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass()} data-testid="cat-name" /></Field>
               <Field label="Descripción"><textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={inputClass()} data-testid="cat-desc" /></Field>
-              {error && <div className="border border-[#10B981]/40 bg-[#10B981]/10 px-3 py-2 text-sm text-amber-400">{error}</div>}
+              {error && <div className="border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">{error}</div>}
               <PrimaryButton type="submit" testid="cat-create" className="w-full">
                 <Plus className="h-4 w-4 inline -mt-0.5 mr-1" /> Crear
               </PrimaryButton>

@@ -3,14 +3,16 @@ import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { Card, PageHeader } from "@/components/ui-kit";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import PageLoader from "@/components/public/PageLoader";
 import { Trash2, Star } from "lucide-react";
 
 export default function Reviews() {
   const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const load = () => api.get("/reviews").then((r) => setReviews(r.data)).catch((err) => toast.error(formatApiError(err)));
+  const load = () => api.get("/reviews").then((r) => setReviews(r.data)).catch((err) => toast.error(formatApiError(err))).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
 
   const confirmDelete = async () => {
@@ -35,7 +37,10 @@ export default function Reviews() {
         Los testimonios generales de la Home solo muestran los 3 más recientes (las anteriores se borran automáticamente). Las reseñas ligadas a un producto no tienen ese límite.
       </p>
 
-      <Card>
+      <Card className="fade-up">
+        {loading ? (
+          <div className="p-6"><PageLoader variant="list" /></div>
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm" data-testid="reviews-table">
             <thead className="border-b border-white/10">
@@ -51,7 +56,7 @@ export default function Reviews() {
             </thead>
             <tbody>
               {reviews.map((r) => (
-                <tr key={r.id} className="border-b border-white/5">
+                <tr key={r.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                   <td className="px-4 py-3 font-semibold whitespace-nowrap">{r.name}</td>
                   <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">{r.city}</td>
                   <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">
@@ -85,6 +90,7 @@ export default function Reviews() {
             </tbody>
           </table>
         </div>
+        )}
       </Card>
 
       <ConfirmDialog
