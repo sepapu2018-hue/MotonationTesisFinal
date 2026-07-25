@@ -22,12 +22,17 @@ export default function ProtectedRoute({ children, permission, adminOnly }) {
   }
 
   if (adminOnly && user.role !== "admin") {
-    return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to="/admin/sin-acceso" replace />;
   }
 
-  // Si se requiere un permiso específico y el usuario no lo tiene, redirigir
-  if (permission && !can(user.permissions, permission)) {
-    return <Navigate to="/admin/dashboard" replace />;
+  // Si se requiere un permiso específico y el usuario no lo tiene, redirigir.
+  // El admin siempre pasa (su columna permissions suele estar vacía porque
+  // no la necesita — el bypass es por rol, igual que en Layout.jsx).
+  // Importante: el destino NO puede ser /admin/dashboard, porque si el usuario
+  // tampoco tiene "view_dashboard" quedaría en un loop de redirección (esa
+  // misma ruta volvería a rebotarlo aquí).
+  if (permission && user.role !== "admin" && !can(user.permissions, permission)) {
+    return <Navigate to="/admin/sin-acceso" replace />;
   }
 
   return children;

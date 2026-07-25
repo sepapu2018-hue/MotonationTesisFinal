@@ -15,6 +15,7 @@ const { httpError } = require('../middleware/errorHandler');
 const router = express.Router();
 const FRONTEND_URL = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000';
 const RESET_TOKEN_TTL_MIN = 30;
+const isProd = process.env.NODE_ENV === 'production';
 
 // Protección anti fuerza bruta: máx. 10 intentos de login cada 15 min por IP
 const loginLimiter = rateLimit({
@@ -70,11 +71,16 @@ async function issueAndSendOtp(user) {
       return { pendingToken };
     } catch (err) {
       console.error('Error enviando código de verificación:', err);
-      // Si falla el envío, se entrega el código en la respuesta para no bloquear el acceso
-      return { pendingToken, dev_otp_code: code };
+      // Fail-closed: si el correo no salió, NO se expone el código en la respuesta
+      // (antes se devolvía igual y eso permitía tomar cualquier cuenta sin acceso al correo).
+      throw httpError(502, 'No se pudo enviar el código de verificación. Intenta nuevamente en unos minutos.');
     }
   }
-  // Sin GMAIL_USER/GMAIL_APP_PASSWORD configurados: el código se devuelve directo en la respuesta
+  // Sin GMAIL_USER/GMAIL_APP_PASSWORD configurados: solo en desarrollo se devuelve el código
+  // directo en la respuesta. En producción esto debe estar siempre configurado.
+  if (isProd) {
+    throw httpError(502, 'El servicio de correo no está configurado.');
+  }
   return { pendingToken, dev_otp_code: code };
 }
 
@@ -184,14 +190,17 @@ router.post('/forgot-password', loginLimiter, asyncHandler(async (req, res) => {
   if (mailerConfigured()) {
     try {
       await sendPasswordResetEmail(normalized, resetLink);
-      res.json({ ok: true });
     } catch (err) {
       console.error('Error enviando email de recuperación (staff):', err);
-      // Si falla el envío, se entrega el enlace en la respuesta para no bloquear al usuario
-      res.json({ ok: true, dev_reset_token: rawToken });
+      // Fail-closed: si el correo no salió, NO se expone el enlace/token en la respuesta
+      // (antes se devolvía igual y eso permitía resetear cualquier contraseña sin acceso al correo).
     }
+    res.json({ ok: true });
+  } else if (isProd) {
+    // Sin GMAIL_USER/GMAIL_APP_PASSWORD configurados en producción: no se expone el token.
+    res.json({ ok: true });
   } else {
-    // Sin GMAIL_USER/GMAIL_APP_PASSWORD configurados: el token se devuelve directo en la respuesta
+    // Solo en desarrollo se devuelve el token directo en la respuesta.
     res.json({ ok: true, dev_reset_token: rawToken });
   }
 }));

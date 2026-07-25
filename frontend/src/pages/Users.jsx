@@ -1,10 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import api, { formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Card, PageHeader, PrimaryButton, GhostButton, Field, inputClass, Badge } from "@/components/ui-kit";
 import Avatar from "@/components/Avatar";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { useDialogA11y } from "@/hooks/useDialogA11y";
 import { Trash2, UserPlus, Upload, X, Pencil, Edit2 } from "lucide-react";
 
 export const PERMISSION_OPTIONS = [
@@ -20,6 +24,23 @@ export const PERMISSION_OPTIONS = [
   { id: 'view_reports',    label: 'Ver Reportes' },
 ];
 
+// Mismas reglas que el backend (routes/users.js) para dar feedback antes de llamar a la API.
+const createUserSchema = z.object({
+  email: z.string().email("Correo inválido"),
+  password: z.string().min(6, "Mínimo 6 caracteres"),
+  name: z.string().min(1, "El nombre es obligatorio"),
+  role: z.enum(["admin", "empleado"]),
+  permissions: z.array(z.string()).default([]),
+});
+
+const editUserSchema = z.object({
+  email: z.string().email("Correo inválido"),
+  name: z.string().min(1, "El nombre es obligatorio"),
+  role: z.enum(["admin", "empleado"]),
+  permissions: z.array(z.string()).default([]),
+  password: z.union([z.string().min(6, "Mínimo 6 caracteres"), z.literal("")]).optional(),
+});
+
 // Convierte un archivo a base64 (data URL). Limita a 800KB.
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -34,16 +55,49 @@ function fileToBase64(file) {
   });
 }
 
+// Checklist de permisos reutilizable entre el form de creación y el de edición.
+function PermissionChecklist({ selected, onToggle }) {
+  return (
+    <div className="space-y-2 mt-2">
+      <label className="block text-xs uppercase tracking-widest text-zinc-500 font-bold">Permisos Específicos</label>
+      <div className="grid grid-cols-1 gap-2 border border-white/10 p-3 bg-[#0E0E0E]">
+        {PERMISSION_OPTIONS.map((p) => (
+          <label key={p.id} className="flex items-center gap-3 text-sm text-zinc-300 cursor-pointer hover:text-white">
+            <input
+              type="checkbox"
+              className="accent-[#10B981]"
+              checked={selected?.includes(p.id) || false}
+              onChange={(e) => onToggle(p.id, e.target.checked)}
+            />
+            {p.label}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Users() {
   const { user: me, refresh } = useAuth();
   const [users, setUsers] = useState([]);
-  const [form, setForm] = useState({ email: "", password: "", name: "", role: "empleado", permissions: [], avatar_url: "" });
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [error, setError] = useState("");
   const fileRef = useRef(null);
 
+  const createForm = useForm({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: { email: "", password: "", name: "", role: "empleado", permissions: [] },
+  });
+
   const [editing, setEditing] = useState(null);
-  const [editForm, setEditForm] = useState({ email: "", name: "", role: "empleado", permissions: [], password: "" });
+  const closeEdit = useCallback(() => setEditing(null), []);
+  const editDialogRef = useDialogA11y(Boolean(editing), closeEdit);
   const [editError, setEditError] = useState("");
+  const editForm = useForm({
+    resolver: zodResolver(editUserSchema),
+    defaultValues: { email: "", name: "", role: "empleado", permissions: [], password: "" },
+  });
+
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [highlightId, setHighlightId] = useState(null);
@@ -62,7 +116,7 @@ export default function Users() {
     try {
       const dataUrl = await fileToBase64(file);
       if (target === "form") {
-        setForm((f) => ({ ...f, avatar_url: dataUrl }));
+        setAvatarUrl(dataUrl);
       } else {
         await api.patch(`/users/${target}`, { avatar_url: dataUrl });
         load();
@@ -75,14 +129,14 @@ export default function Users() {
     }
   };
 
-  const create = async (e) => {
-    e.preventDefault();
+  const create = async (data) => {
     setError("");
     try {
-      const { data } = await api.post("/users", form);
-      setForm({ email: "", password: "", name: "", role: "empleado", permissions: [], avatar_url: "" });
+      const { data: created } = await api.post("/users", { ...data, avatar_url: avatarUrl });
+      createForm.reset({ email: "", password: "", name: "", role: "empleado", permissions: [] });
+      setAvatarUrl("");
       await load();
-      setHighlightId(data?.id);
+      setHighlightId(created?.id);
       setTimeout(() => setHighlightId(null), 1800);
     } catch (err) { setError(formatApiError(err)); }
   };
@@ -95,15 +149,14 @@ export default function Users() {
 
   const openEdit = (u) => {
     setEditing(u);
-    setEditForm({ email: u.email, name: u.name, role: u.role, permissions: u.permissions || [], password: "" });
+    editForm.reset({ email: u.email, name: u.name, role: u.role, permissions: u.permissions || [], password: "" });
     setEditError("");
   };
 
-  const saveEdit = async (e) => {
-    e.preventDefault();
+  const saveEdit = async (data) => {
     setEditError("");
     try {
-      const payload = { ...editForm };
+      const payload = { ...data };
       if (!payload.password) delete payload.password;
       await api.put(`/users/${editing.id}`, payload);
       const editedId = editing.id;
@@ -135,6 +188,18 @@ export default function Users() {
     }
   };
 
+  const createPermissions = createForm.watch("permissions");
+  const toggleCreatePermission = (id, checked) => {
+    const current = createForm.getValues("permissions") || [];
+    createForm.setValue("permissions", checked ? [...current, id] : current.filter((item) => item !== id), { shouldValidate: true });
+  };
+
+  const editPermissions = editForm.watch("permissions");
+  const toggleEditPermission = (id, checked) => {
+    const current = editForm.getValues("permissions") || [];
+    editForm.setValue("permissions", checked ? [...current, id] : current.filter((item) => item !== id), { shouldValidate: true });
+  };
+
   return (
     <div className="max-w-[1400px] mx-auto px-6 py-8">
       <PageHeader kicker="Administración" title="Usuarios" testid="users-header" count={users.length} />
@@ -149,7 +214,7 @@ export default function Users() {
             <div className="px-4 pt-4 pb-2">
               <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
                 Personal Administrativo
-                <span className="ml-2 text-zinc-600">({staff.length})</span>
+                <span className="ml-2 text-zinc-400">({staff.length})</span>
               </p>
             </div>
             <div className="overflow-x-auto">
@@ -180,18 +245,18 @@ export default function Users() {
                       <td className="px-4 py-3"><Badge variant={u.role === "admin" ? "danger" : "info"}>{u.role}</Badge></td>
                       <td className="px-4 py-3 text-right">
                         {u.avatar_url && (
-                          <button onClick={() => removeAvatar(u)} className="p-2 text-zinc-400 hover:text-amber-400 transition-colors"><X className="h-4 w-4" /></button>
+                          <button onClick={() => removeAvatar(u)} aria-label={`Quitar foto de ${u.name}`} className="p-2 text-zinc-400 hover:text-amber-400 transition-colors"><X className="h-4 w-4" /></button>
                         )}
-                        <button onClick={() => openEdit(u)} data-testid={`edit-user-${u.email}`} className="p-2 text-zinc-400 hover:text-[#10B981] transition-colors"><Edit2 className="h-4 w-4" /></button>
+                        <button onClick={() => openEdit(u)} aria-label={`Editar ${u.name}`} data-testid={`edit-user-${u.email}`} className="p-2 text-zinc-400 hover:text-[#10B981] transition-colors"><Edit2 className="h-4 w-4" /></button>
                         {u.id !== me.id && (
-                          <button onClick={() => setToDelete(u)} className="p-2 text-zinc-400 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                          <button onClick={() => setToDelete(u)} aria-label={`Eliminar ${u.name}`} className="p-2 text-zinc-400 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
                         )}
                       </td>
                     </tr>
                   ))}
                   {staff.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-4 py-6 text-center text-zinc-600 text-xs uppercase tracking-widest">
+                      <td colSpan={5} className="px-4 py-6 text-center text-zinc-400 text-xs uppercase tracking-widest">
                         Sin personal registrado
                       </td>
                     </tr>
@@ -206,7 +271,7 @@ export default function Users() {
             <div className="px-4 pt-4 pb-2">
               <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
                 Clientes de la Tienda
-                <span className="ml-2 text-zinc-600">({customers.length})</span>
+                <span className="ml-2 text-zinc-400">({customers.length})</span>
               </p>
             </div>
             <div className="overflow-x-auto">
@@ -237,17 +302,17 @@ export default function Users() {
                       <td className="px-4 py-3"><Badge variant="success">{u.role}</Badge></td>
                       <td className="px-4 py-3 text-right">
                         {u.avatar_url && (
-                          <button onClick={() => removeAvatar(u)} className="p-2 text-zinc-400 hover:text-amber-400 transition-colors"><X className="h-4 w-4" /></button>
+                          <button onClick={() => removeAvatar(u)} aria-label={`Quitar foto de ${u.name}`} className="p-2 text-zinc-400 hover:text-amber-400 transition-colors"><X className="h-4 w-4" /></button>
                         )}
                         {u.id !== me.id && (
-                          <button onClick={() => setToDelete(u)} className="p-2 text-zinc-400 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                          <button onClick={() => setToDelete(u)} aria-label={`Eliminar ${u.name}`} className="p-2 text-zinc-400 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
                         )}
                       </td>
                     </tr>
                   ))}
                   {customers.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-4 py-6 text-center text-zinc-600 text-xs uppercase tracking-widest">
+                      <td colSpan={5} className="px-4 py-6 text-center text-zinc-400 text-xs uppercase tracking-widest">
                         Sin clientes registrados
                       </td>
                     </tr>
@@ -264,9 +329,9 @@ export default function Users() {
           <h3 className="font-display uppercase font-bold tracking-wider text-lg mb-4">
             <UserPlus className="h-4 w-4 inline -mt-0.5 mr-1" /> Nuevo Usuario
           </h3>
-          <form onSubmit={create} className="space-y-4">
+          <form onSubmit={createForm.handleSubmit(create)} className="space-y-4" noValidate>
             <div className="flex items-center gap-4">
-              <Avatar src={form.avatar_url} name={form.name} size={64} />
+              <Avatar src={avatarUrl} name={createForm.watch("name")} size={64} />
               <div className="flex-1 flex flex-col gap-2">
                 <button type="button" onClick={() => fileRef.current?.click()} className="px-3 py-2 border border-white/15 hover:border-[#10B981] hover:text-[#10B981] text-[10px] uppercase tracking-widest font-bold flex items-center gap-1.5 justify-center">
                   <Upload className="h-3 w-3" /> Subir foto
@@ -275,42 +340,29 @@ export default function Users() {
               </div>
             </div>
 
-            <Field label="Nombre"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass()} /></Field>
-            <Field label="Email"><input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass()} /></Field>
-            <Field label="Contraseña"><input type="password" required minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className={inputClass()} /></Field>
+            <Field label="Nombre">
+              <input {...createForm.register("name")} className={inputClass()} />
+              {createForm.formState.errors.name && <p className="mt-1 text-xs text-amber-400">{createForm.formState.errors.name.message}</p>}
+            </Field>
+            <Field label="Email">
+              <input type="email" {...createForm.register("email")} className={inputClass()} />
+              {createForm.formState.errors.email && <p className="mt-1 text-xs text-amber-400">{createForm.formState.errors.email.message}</p>}
+            </Field>
+            <Field label="Contraseña">
+              <input type="password" {...createForm.register("password")} className={inputClass()} />
+              {createForm.formState.errors.password && <p className="mt-1 text-xs text-amber-400">{createForm.formState.errors.password.message}</p>}
+            </Field>
             <Field label="Rol">
-              <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className={inputClass()}>
+              <select {...createForm.register("role")} className={inputClass()}>
                 <option value="empleado">Empleado</option>
                 <option value="admin">Admin</option>
               </select>
             </Field>
 
-            {/* SECCIÓN DE PERMISOS — ampliada a todas las secciones del admin */}
-            <div className="space-y-2 mt-2">
-              <label className="block text-xs uppercase tracking-widest text-zinc-500 font-bold">Permisos Específicos</label>
-              <div className="grid grid-cols-1 gap-2 border border-white/10 p-3 bg-[#0E0E0E]">
-                {PERMISSION_OPTIONS.map((p) => (
-                  <label key={p.id} className="flex items-center gap-3 text-sm text-zinc-300 cursor-pointer hover:text-white">
-                    <input 
-                      type="checkbox"
-                      className="accent-[#10B981]"
-                      checked={form.permissions?.includes(p.id)}
-                      onChange={(e) => {
-                        const current = form.permissions || [];
-                        const updated = e.target.checked 
-                          ? [...current, p.id] 
-                          : current.filter(item => item !== p.id);
-                        setForm({ ...form, permissions: updated });
-                      }}
-                    />
-                    {p.label}
-                  </label>
-                ))}
-              </div>
-            </div>
+            <PermissionChecklist selected={createPermissions} onToggle={toggleCreatePermission} />
 
             {error && <div className="border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">{error}</div>}
-            <PrimaryButton type="submit" className="w-full">Crear Usuario</PrimaryButton>
+            <PrimaryButton type="submit" className="w-full" disabled={createForm.formState.isSubmitting}>Crear Usuario</PrimaryButton>
           </form>
         </Card>
 
@@ -318,56 +370,51 @@ export default function Users() {
 
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" data-testid="edit-user-modal">
-          <form onSubmit={saveEdit} className="w-full max-w-lg bg-[#141414] border border-white/10 p-8 max-h-[90vh] overflow-auto">
+          <form
+            ref={editDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-user-modal-title"
+            tabIndex={-1}
+            onSubmit={editForm.handleSubmit(saveEdit)}
+            className="w-full max-w-lg bg-[#141414] border border-white/10 p-8 max-h-[90vh] overflow-auto outline-none"
+            noValidate
+          >
             <div className="flex items-center justify-between mb-6">
               <div>
                 <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#10B981] mb-1">// Editar</div>
-                <h3 className="font-display font-black text-2xl uppercase">Editar Usuario</h3>
+                <h3 id="edit-user-modal-title" className="font-display font-black text-2xl uppercase">Editar Usuario</h3>
               </div>
-              <button type="button" onClick={() => setEditing(null)}><X /></button>
+              <button type="button" onClick={closeEdit} aria-label="Cerrar"><X /></button>
             </div>
 
             <div className="space-y-4">
-              <Field label="Nombre"><input required value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className={inputClass()} /></Field>
-              <Field label="Email"><input type="email" required value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className={inputClass()} /></Field>
+              <Field label="Nombre">
+                <input {...editForm.register("name")} className={inputClass()} />
+                {editForm.formState.errors.name && <p className="mt-1 text-xs text-amber-400">{editForm.formState.errors.name.message}</p>}
+              </Field>
+              <Field label="Email">
+                <input type="email" {...editForm.register("email")} className={inputClass()} />
+                {editForm.formState.errors.email && <p className="mt-1 text-xs text-amber-400">{editForm.formState.errors.email.message}</p>}
+              </Field>
               <Field label="Nueva contraseña (opcional)">
-                <input type="password" minLength={6} placeholder="Dejar en blanco para no cambiarla" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} className={inputClass()} />
+                <input type="password" placeholder="Dejar en blanco para no cambiarla" {...editForm.register("password")} className={inputClass()} />
+                {editForm.formState.errors.password && <p className="mt-1 text-xs text-amber-400">{editForm.formState.errors.password.message}</p>}
               </Field>
               <Field label="Rol">
-                <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })} className={inputClass()}>
+                <select {...editForm.register("role")} className={inputClass()}>
                   <option value="empleado">Empleado</option>
                   <option value="admin">Admin</option>
                 </select>
               </Field>
 
-              <div className="space-y-2 mt-2">
-                <label className="block text-xs uppercase tracking-widest text-zinc-500 font-bold">Permisos Específicos</label>
-                <div className="grid grid-cols-1 gap-2 border border-white/10 p-3 bg-[#0E0E0E]">
-                  {PERMISSION_OPTIONS.map((p) => (
-                    <label key={p.id} className="flex items-center gap-3 text-sm text-zinc-300 cursor-pointer hover:text-white">
-                      <input
-                        type="checkbox"
-                        className="accent-[#10B981]"
-                        checked={editForm.permissions?.includes(p.id)}
-                        onChange={(e) => {
-                          const current = editForm.permissions || [];
-                          const updated = e.target.checked
-                            ? [...current, p.id]
-                            : current.filter((item) => item !== p.id);
-                          setEditForm({ ...editForm, permissions: updated });
-                        }}
-                      />
-                      {p.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
+              <PermissionChecklist selected={editPermissions} onToggle={toggleEditPermission} />
             </div>
 
             {editError && <div className="mt-4 border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">{editError}</div>}
             <div className="mt-6 flex justify-end gap-3">
-              <GhostButton type="button" onClick={() => setEditing(null)}>Cancelar</GhostButton>
-              <PrimaryButton type="submit">Guardar cambios</PrimaryButton>
+              <GhostButton type="button" onClick={closeEdit}>Cancelar</GhostButton>
+              <PrimaryButton type="submit" disabled={editForm.formState.isSubmitting}>Guardar cambios</PrimaryButton>
             </div>
           </form>
         </div>

@@ -103,7 +103,7 @@ export default function ResetPasswordStaff() {
           </form>
         )}
 
-        <div className="mt-8 pt-6 border-t border-white/10 text-center text-[10px] uppercase tracking-widest text-zinc-600 font-mono">
+        <div className="mt-8 pt-6 border-t border-white/10 text-center text-[10px] uppercase tracking-widest text-zinc-400 font-mono">
           <Link to="/admin/login" className="text-[#10B981] hover:underline font-bold">← Volver a Entrar</Link>
         </div>
       </div>

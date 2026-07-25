@@ -3,7 +3,7 @@ const express = require('express');
 const { z } = require('zod');
 const asyncHandler = require('../utils/asyncHandler');
 const { query, one } = require('../config/db');
-const { authRequired, adminRequired } = require('../middleware/auth');
+const { authRequired, adminRequired, permissionRequired } = require('../middleware/auth');
 const { httpError } = require('../middleware/errorHandler');
 
 const router = express.Router();
@@ -16,7 +16,7 @@ const supplierSchema = z.object({
   email: z.string().optional().default(''),
 });
 
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', permissionRequired('view_suppliers', 'create_sale'), asyncHandler(async (req, res) => {
   const rows = await query('SELECT * FROM suppliers ORDER BY name ASC');
   res.json(rows);
 }));

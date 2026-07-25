@@ -6,8 +6,7 @@ import { toast } from "sonner";
 import { Search, Filter, X, ShoppingCart, Sparkles } from "lucide-react";
 import PageLoader from "@/components/public/PageLoader";
 import { useTilt } from "@/hooks/useTilt";
-
-const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits: 0 })}`;
+import { formatCurrency as money } from "@/lib/utils";
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -97,7 +96,7 @@ export default function Shop() {
         <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-2">// Catálogo</div>
         <h1 className="font-display font-black text-5xl uppercase leading-none">
           Tienda
-          <span className="timer text-2xl text-zinc-600 ml-3">[{String(sorted.length).padStart(3, "0")}]</span>
+          <span className="timer text-2xl text-zinc-400 ml-3">[{String(sorted.length).padStart(3, "0")}]</span>
         </h1>
       </div>
 
@@ -114,6 +113,7 @@ export default function Shop() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Buscar…"
+                aria-label="Buscar productos"
                 className="flex-1 bg-transparent outline-none text-sm"
                 data-testid="shop-search"
               />
@@ -131,6 +131,7 @@ export default function Shop() {
                     <button
                       key={opt.v}
                       onClick={() => setParam("type", opt.v)}
+                      aria-pressed={type === opt.v}
                       className={`w-full text-left px-3 py-2 text-xs uppercase tracking-widest font-bold transition-colors border-l-2 ${
                         type === opt.v ? "border-[#10B981] bg-[#10B981]/5 text-[#10B981]" : "border-transparent text-zinc-400 hover:text-white"
                       }`}
@@ -146,6 +147,7 @@ export default function Shop() {
                 <div className="space-y-1">
                   <button
                     onClick={() => setParam("category", "")}
+                    aria-pressed={!categoryId}
                     className={`w-full text-left px-3 py-2 text-xs uppercase tracking-widest font-bold border-l-2 ${
                       !categoryId ? "border-[#10B981] bg-[#10B981]/5 text-[#10B981]" : "border-transparent text-zinc-400 hover:text-white"
                     }`}
@@ -156,11 +158,12 @@ export default function Shop() {
                     <button
                       key={c.id}
                       onClick={() => setParam("category", c.id)}
+                      aria-pressed={categoryId === c.id}
                       className={`w-full text-left px-3 py-2 text-xs uppercase tracking-widest font-bold border-l-2 flex items-center justify-between ${
                         categoryId === c.id ? "border-[#10B981] bg-[#10B981]/5 text-[#10B981]" : "border-transparent text-zinc-400 hover:text-white"
                       }`}
                     >
-                      {c.name} <span className="text-zinc-600">{c.product_count}</span>
+                      {c.name} <span className="text-zinc-400">{c.product_count}</span>
                     </button>
                   ))}
                 </div>
@@ -190,16 +193,18 @@ export default function Shop() {
                     value={minPrice}
                     onChange={(e) => setMinPrice(e.target.value)}
                     placeholder="Mín"
+                    aria-label="Precio mínimo en USD"
                     className="w-full bg-transparent border border-white/15 px-3 py-2 text-xs focus:outline-none focus:border-[#10B981]"
                     data-testid="shop-min-price"
                   />
-                  <span className="text-zinc-600">—</span>
+                  <span className="text-zinc-400">—</span>
                   <input
                     type="number"
                     min="0"
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
                     placeholder="Máx"
+                    aria-label="Precio máximo en USD"
                     className="w-full bg-transparent border border-white/15 px-3 py-2 text-xs focus:outline-none focus:border-[#10B981]"
                     data-testid="shop-max-price"
                   />

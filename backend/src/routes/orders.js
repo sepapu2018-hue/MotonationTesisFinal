@@ -3,7 +3,7 @@ const express = require('express');
 const { z } = require('zod');
 const asyncHandler = require('../utils/asyncHandler');
 const { pool, query, one } = require('../config/db');
-const { customerRequired, authRequired } = require('../middleware/auth');
+const { customerRequired, authRequired, permissionRequired } = require('../middleware/auth');
 const { httpError } = require('../middleware/errorHandler');
 const { computeOrderTotals, generateOrderNumber } = require('../utils/pricing');
 const { sendOrderConfirmationEmail, sendNewOrderAdminEmail, isConfigured: mailerConfigured } = require('../utils/mailer');
@@ -217,7 +217,7 @@ router.put('/mine/:id/cancel', customerRequired, asyncHandler(async (req, res) =
 }));
 
 // Admin: listado de todos los pedidos
-router.get('/', authRequired, asyncHandler(async (req, res) => {
+router.get('/', authRequired, permissionRequired('view_orders'), asyncHandler(async (req, res) => {
   const rows = await query(
     `SELECT id, order_number, customer_name, customer_email, total, status, created_at
      FROM orders ORDER BY created_at DESC LIMIT 500`
@@ -225,7 +225,7 @@ router.get('/', authRequired, asyncHandler(async (req, res) => {
   res.json(rows.map((o) => ({ ...o, total: Number(o.total) })));
 }));
 
-router.get('/:id', authRequired, asyncHandler(async (req, res) => {
+router.get('/:id', authRequired, permissionRequired('view_orders'), asyncHandler(async (req, res) => {
   const order = await one('SELECT * FROM orders WHERE id = $1', [req.params.id]);
   if (!order) throw httpError(404, 'Pedido no encontrado');
   const items = await query('SELECT * FROM order_items WHERE order_id = $1', [order.id]);
@@ -243,7 +243,7 @@ router.get('/:id', authRequired, asyncHandler(async (req, res) => {
   });
 }));
 
-router.put('/:id/status', authRequired, asyncHandler(async (req, res) => {
+router.put('/:id/status', authRequired, permissionRequired('view_orders'), asyncHandler(async (req, res) => {
   const schema = z.object({
     status: z.enum(['pendiente', 'pagado', 'enviado', 'entregado', 'cancelado']),
   });

@@ -2,11 +2,11 @@
 const express = require('express');
 const asyncHandler = require('../utils/asyncHandler');
 const { query, one } = require('../config/db');
-const { authRequired } = require('../middleware/auth');
+const { authRequired, permissionRequired } = require('../middleware/auth');
 const { httpError } = require('../middleware/errorHandler');
 
 const router = express.Router();
-router.use(authRequired);
+router.use(authRequired, permissionRequired('view_reviews'));
 
 router.get('/', asyncHandler(async (req, res) => {
   const rows = await query(`

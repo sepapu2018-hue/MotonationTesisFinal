@@ -5,8 +5,8 @@ import api, { formatApiError } from "@/lib/api";
 import { useCart } from "@/context/CartContext";
 import { ShoppingCart, ArrowLeft, Check, Minus, Plus, Package, Shield, Truck, Star, MapPin, Quote } from "lucide-react";
 import PageLoader from "@/components/public/PageLoader";
-
-const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits: 0 })}`;
+import { formatCurrency as money } from "@/lib/utils";
+import { HudCorners } from "@/components/ui-kit";
 
 export default function ProductDetail() {
   const { sku } = useParams();
@@ -96,10 +96,11 @@ export default function ProductDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
           <div
-            className="bg-[#0E0E0E] border border-white/10 aspect-square overflow-hidden cursor-zoom-in"
+            className="relative bg-[#0E0E0E] border border-white/10 aspect-square overflow-hidden cursor-zoom-in"
             onMouseMove={handleImageMove}
             onMouseLeave={handleImageLeave}
           >
+            <HudCorners />
             {gallery[activeImage] && (
               <img
                 src={gallery[activeImage]}
@@ -115,6 +116,8 @@ export default function ProductDetail() {
                 <button
                   key={i}
                   onClick={() => setActiveImage(i)}
+                  aria-label={`Ver imagen ${i + 1} de ${product.name}`}
+                  aria-pressed={activeImage === i}
                   data-testid={`product-thumb-${i}`}
                   className={`h-16 w-16 border overflow-hidden shrink-0 transition-colors ${activeImage === i ? "border-[#10B981]" : "border-white/10 hover:border-white/30"}`}
                 >
@@ -157,11 +160,11 @@ export default function ProductDetail() {
               <div className="flex items-center gap-4">
                 <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Cantidad</div>
                 <div className="flex items-center border border-white/15">
-                  <button onClick={() => setQty(Math.max(1, qty - 1))} className="h-10 w-10 hover:bg-white/5">
+                  <button onClick={() => setQty(Math.max(1, qty - 1))} aria-label="Reducir cantidad" className="h-10 w-10 hover:bg-white/5">
                     <Minus className="h-4 w-4 mx-auto" />
                   </button>
                   <div className="w-12 text-center timer text-lg" data-testid="qty-display">{qty}</div>
-                  <button onClick={() => setQty(Math.min(product.stock, qty + 1))} className="h-10 w-10 hover:bg-white/5">
+                  <button onClick={() => setQty(Math.min(product.stock, qty + 1))} aria-label="Aumentar cantidad" className="h-10 w-10 hover:bg-white/5">
                     <Plus className="h-4 w-4 mx-auto" />
                   </button>
                 </div>
@@ -290,8 +293,8 @@ export default function ProductDetail() {
                 <span className="text-xs uppercase tracking-widest text-zinc-500">Calificación</span>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((n) => (
-                    <button key={n} type="button" onClick={() => setReviewForm({ ...reviewForm, rating: n })} data-testid={`product-review-star-${n}`}>
-                      <Star className={`h-5 w-5 ${n <= reviewForm.rating ? "fill-[#F59E0B] text-[#F59E0B]" : "text-zinc-600"}`} />
+                    <button key={n} type="button" onClick={() => setReviewForm({ ...reviewForm, rating: n })} aria-label={`Calificar con ${n} estrella${n > 1 ? "s" : ""}`} aria-pressed={reviewForm.rating === n} data-testid={`product-review-star-${n}`}>
+                      <Star className={`h-5 w-5 ${n <= reviewForm.rating ? "fill-[#F59E0B] text-[#F59E0B]" : "text-zinc-400"}`} />
                     </button>
                   ))}
                 </div>

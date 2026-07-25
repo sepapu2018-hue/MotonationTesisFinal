@@ -3,7 +3,7 @@ const express = require('express');
 const { z } = require('zod');
 const asyncHandler = require('../utils/asyncHandler');
 const { pool, query, one } = require('../config/db');
-const { authRequired, adminRequired } = require('../middleware/auth');
+const { authRequired, adminRequired, permissionRequired } = require('../middleware/auth');
 const { httpError } = require('../middleware/errorHandler');
 const { logAudit } = require('../utils/auditLog');
 
@@ -42,7 +42,7 @@ const normalize = (p) => ({
 // 1. LISTAR PRODUCTOS CON FILTROS DINÁMICOS
 // Retrocompatible: sin ?page devuelve el arreglo completo (lo usan los selectores
 // de Movimientos/Kárdex); con ?page se activa la paginación real para la tabla.
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', permissionRequired('view_products', 'create_sale', 'view_kardex'), asyncHandler(async (req, res) => {
   const { q, type, category_id, low_stock, page, page_size } = req.query;
   const where = [];
   const params = [];
@@ -85,7 +85,7 @@ router.get('/', asyncHandler(async (req, res) => {
 }));
 
 // 2. OBTENER UN PRODUCTO POR ID
-router.get('/:id', asyncHandler(async (req, res) => {
+router.get('/:id', permissionRequired('view_products', 'create_sale', 'view_kardex'), asyncHandler(async (req, res) => {
   const p = await one('SELECT * FROM products WHERE id = $1', [req.params.id]);
   if (!p) throw httpError(404, 'Producto no encontrado');
   res.json(normalize(p));

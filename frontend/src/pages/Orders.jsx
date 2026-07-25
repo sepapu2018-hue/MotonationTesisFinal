@@ -5,8 +5,7 @@ import { PrimaryButton, inputClass } from "@/components/ui-kit";
 import PageLoader from "@/components/public/PageLoader";
 import CountUp from "@/components/CountUp";
 import { Search, FileText, Truck } from "lucide-react";
-
-const money = (n) => `$${Number(n || 0).toLocaleString("es", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
+import { formatCurrency as money } from "@/lib/utils";
 
 const STATUS_OPTIONS = ["pendiente", "pagado", "enviado", "entregado", "cancelado"];
 const STATUS = {
@@ -66,7 +65,7 @@ export default function Orders() {
         <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-2">// E-commerce</div>
         <h1 className="font-display font-black text-5xl uppercase leading-none tracking-tight flex items-end gap-3">
           Pedidos
-          <span className="timer text-2xl text-zinc-600">[{String(orders.length).padStart(3, "0")}]</span>
+          <span className="timer text-2xl text-zinc-400">[{String(orders.length).padStart(3, "0")}]</span>
         </h1>
       </div>
 
@@ -100,7 +99,7 @@ export default function Orders() {
               );
             })}
             {filtered.length === 0 && (
-              <div className="px-4 py-12 text-center text-zinc-600 text-xs uppercase tracking-widest">Sin pedidos que coincidan</div>
+              <div className="px-4 py-12 text-center text-zinc-400 text-xs uppercase tracking-widest">Sin pedidos que coincidan</div>
             )}
           </div>
         </aside>
@@ -108,7 +107,7 @@ export default function Orders() {
         <section className="col-span-12 lg:col-span-7">
           {!selected ? (
             <div className="border border-white/10 bg-[#0E0E0E] p-16 text-center">
-              <Truck className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
+              <Truck className="h-12 w-12 text-zinc-400 mx-auto mb-4" />
               <div className="font-display font-bold text-2xl uppercase">Selecciona un pedido</div>
             </div>
           ) : !detail ? (

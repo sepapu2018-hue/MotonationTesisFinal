@@ -60,7 +60,7 @@ export default function Reviews() {
                   <td className="px-4 py-3 font-semibold whitespace-nowrap">{r.name}</td>
                   <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">{r.city}</td>
                   <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">
-                    {r.product_name || <span className="text-zinc-600">— General —</span>}
+                    {r.product_name || <span className="text-zinc-400">— General —</span>}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="inline-flex items-center gap-0.5 text-amber-400">
@@ -82,7 +82,7 @@ export default function Reviews() {
               ))}
               {reviews.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-zinc-600 text-xs uppercase tracking-widest">
+                  <td colSpan={7} className="px-4 py-10 text-center text-zinc-400 text-xs uppercase tracking-widest">
                     Sin reseñas registradas
                   </td>
                 </tr>

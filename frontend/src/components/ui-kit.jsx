@@ -1,5 +1,18 @@
 import CountUp from "@/components/CountUp";
 
+// Marcas de esquina tipo visor/HUD — colocar dentro de un contenedor con
+// position:relative. Es el detalle de firma del panel técnico (telemetría).
+export function HudCorners() {
+  return (
+    <>
+      <span className="hud-corner hud-corner-tl" />
+      <span className="hud-corner hud-corner-tr" />
+      <span className="hud-corner hud-corner-bl" />
+      <span className="hud-corner hud-corner-br" />
+    </>
+  );
+}
+
 export function PageHeader({ kicker, title, actions, testid, count }) {
   return (
     <div className="flex items-end justify-between gap-4 mb-6" data-testid={testid}>
@@ -8,7 +21,7 @@ export function PageHeader({ kicker, title, actions, testid, count }) {
         <h1 className="font-display font-black text-5xl uppercase leading-none tracking-tight flex items-end gap-3">
           {title}
           {count != null && (
-            <span className="timer text-2xl text-zinc-600">
+            <span className="timer text-2xl text-zinc-400">
               [<CountUp value={count} format={(n) => String(n).padStart(3, "0")} />]
             </span>
           )}
@@ -23,7 +36,7 @@ export function PrimaryButton({ children, className = "", testid, ...rest }) {
   return (
     <button
       data-testid={testid}
-      className={`bg-[#10B981] hover:bg-[#34D399] text-white font-display uppercase tracking-widest font-bold px-4 py-2 text-sm transition-colors disabled:opacity-50 ${className}`}
+      className={`panel-clip-sm bg-[#10B981] hover:bg-[#34D399] text-white font-display uppercase tracking-widest font-bold px-4 py-2 text-sm transition-colors disabled:opacity-50 ${className}`}
       {...rest}
     >
       {children}
@@ -35,7 +48,7 @@ export function GhostButton({ children, className = "", testid, ...rest }) {
   return (
     <button
       data-testid={testid}
-      className={`border border-white/15 hover:border-[#10B981] hover:text-[#10B981] text-white font-display uppercase tracking-widest font-bold px-4 py-2 text-sm transition-colors disabled:opacity-50 ${className}`}
+      className={`panel-clip-sm border border-white/15 hover:border-[#10B981] hover:text-[#10B981] text-white font-display uppercase tracking-widest font-bold px-4 py-2 text-sm transition-colors disabled:opacity-50 ${className}`}
       {...rest}
     >
       {children}
@@ -47,7 +60,7 @@ export function DangerButton({ children, className = "", testid, ...rest }) {
   return (
     <button
       data-testid={testid}
-      className={`bg-red-500/90 hover:bg-red-500 text-white font-display uppercase tracking-widest font-bold px-4 py-2 text-sm transition-colors disabled:opacity-50 ${className}`}
+      className={`panel-clip-sm bg-red-500/90 hover:bg-red-500 text-white font-display uppercase tracking-widest font-bold px-4 py-2 text-sm transition-colors disabled:opacity-50 ${className}`}
       {...rest}
     >
       {children}
@@ -56,7 +69,7 @@ export function DangerButton({ children, className = "", testid, ...rest }) {
 }
 
 export function Card({ children, className = "", ...rest }) {
-  return <div className={`bg-[#141414] border border-white/10 ${className}`} {...rest}>{children}</div>;
+  return <div className={`panel-accent-top bg-[#141414] border border-white/10 ${className}`} {...rest}>{children}</div>;
 }
 
 export function Badge({ children, variant = "default" }) {

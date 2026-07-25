@@ -8,9 +8,7 @@ import {
   Package, AlertTriangle, DollarSign, Activity, Bike, ShoppingBag, ArrowRight,
   ArrowDownToLine, ArrowUpFromLine, ClipboardCheck, TrendingUp, AlertCircle,
 } from "lucide-react";
-
-// Pequeño helper para formatear $ con miles
-const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits: 0 })}`;
+import { formatCurrency as money } from "@/lib/utils";
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -75,9 +73,9 @@ export default function Dashboard() {
             </div>
             <div className="mt-5 flex flex-wrap items-center gap-4 text-xs uppercase tracking-widest font-bold text-zinc-400">
               <span><span className="text-white timer text-base"><CountUp value={stats.total_units} /></span> unidades</span>
-              <span className="text-zinc-700">·</span>
+              <span className="text-zinc-400">·</span>
               <span><span className="text-white timer text-base"><CountUp value={stats.total_products} /></span> productos</span>
-              <span className="text-zinc-700">·</span>
+              <span className="text-zinc-400">·</span>
               <span><span className="text-white timer text-base"><CountUp value={stats.movements_today} /></span> movs hoy</span>
             </div>
           </div>
@@ -304,7 +302,7 @@ function Tile({ children, className = "", icon: Icon, kicker, accent = false }) 
       {accent && <span className="absolute top-0 left-0 h-full w-[3px] bg-[#10B981]" />}
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-500">{kicker}</span>
-        {Icon && <Icon className={`h-3.5 w-3.5 ${accent ? "text-[#10B981]" : "text-zinc-600"}`} />}
+        {Icon && <Icon className={`h-3.5 w-3.5 ${accent ? "text-[#10B981]" : "text-zinc-400"}`} />}
       </div>
       {children}
     </div>

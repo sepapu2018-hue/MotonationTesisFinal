@@ -3,7 +3,7 @@ const express = require('express');
 const { z } = require('zod');
 const asyncHandler = require('../utils/asyncHandler');
 const { pool, query } = require('../config/db');
-const { authRequired } = require('../middleware/auth');
+const { authRequired, permissionRequired } = require('../middleware/auth');
 const { httpError } = require('../middleware/errorHandler');
 const { weightedAverageCost } = require('../utils/costing');
 const { checkLowStockAlert } = require('../utils/stockAlerts');
@@ -30,7 +30,7 @@ const movSchema = z.object({
   }
 });
 
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', permissionRequired('create_sale', 'view_dashboard'), asyncHandler(async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 200, 1000);
   const rows = await query(
     'SELECT * FROM movements ORDER BY created_at DESC LIMIT $1',
@@ -39,7 +39,7 @@ router.get('/', asyncHandler(async (req, res) => {
   res.json(rows.map((m) => ({ ...m, unit_cost: Number(m.unit_cost), unit_price: Number(m.unit_price) })));
 }));
 
-router.post('/', asyncHandler(async (req, res) => {
+router.post('/', permissionRequired('create_sale'), asyncHandler(async (req, res) => {
   const data = movSchema.parse(req.body);
 
   const client = await pool.connect();

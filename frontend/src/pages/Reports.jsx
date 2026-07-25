@@ -7,8 +7,7 @@ import { Card, PageHeader, PrimaryButton, Field, inputClass } from "@/components
 import PageLoader from "@/components/public/PageLoader";
 import CountUp from "@/components/CountUp";
 import { Download, TrendingUp } from "lucide-react";
-
-const money = (n) => `$${Number(n || 0).toLocaleString("es", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+import { formatCurrency as money } from "@/lib/utils";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const monthAgoStr = () => {

@@ -6,8 +6,7 @@ import { useCustomer } from "@/context/CustomerContext";
 import { CreditCard, Lock, Minus, Plus, X } from "lucide-react";
 import PageLoader from "@/components/public/PageLoader";
 import AnimatedCheck from "@/components/public/AnimatedCheck";
-
-const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
+import { formatCurrency as money } from "@/lib/utils";
 
 export default function Checkout() {
   const { items, totals, clear, updateQuantity, removeItem } = useCart();
@@ -139,6 +138,7 @@ export default function Checkout() {
                     <button
                       type="button"
                       onClick={() => updateQuantity(i.product_id, i.quantity - 1)}
+                      aria-label={`Reducir cantidad de ${i.name}`}
                       data-testid={`checkout-qty-minus-${i.sku}`}
                       className="h-6 w-6 hover:bg-white/5"
                     >
@@ -148,6 +148,7 @@ export default function Checkout() {
                     <button
                       type="button"
                       onClick={() => updateQuantity(i.product_id, i.quantity + 1)}
+                      aria-label={`Aumentar cantidad de ${i.name}`}
                       data-testid={`checkout-qty-plus-${i.sku}`}
                       className="h-6 w-6 hover:bg-white/5"
                     >
@@ -158,6 +159,7 @@ export default function Checkout() {
                   <button
                     type="button"
                     onClick={() => removeItem(i.product_id)}
+                    aria-label={`Quitar ${i.name} del carrito`}
                     data-testid={`checkout-remove-${i.sku}`}
                     className="text-zinc-500 hover:text-amber-400 shrink-0"
                   >

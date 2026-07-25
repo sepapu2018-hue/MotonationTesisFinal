@@ -3,7 +3,7 @@ const express = require('express');
 const { z } = require('zod');
 const asyncHandler = require('../utils/asyncHandler');
 const { query, one } = require('../config/db');
-const { authRequired, adminRequired } = require('../middleware/auth');
+const { authRequired, adminRequired, permissionRequired } = require('../middleware/auth');
 const { httpError } = require('../middleware/errorHandler');
 
 const router = express.Router();
@@ -18,7 +18,7 @@ const categorySchema = z.object({
 });
 
 // 1. LEER TODAS LAS CATEGORÍAS (GET /api/categories)
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', permissionRequired('view_categories', 'view_products'), asyncHandler(async (req, res) => {
   const cats = await query('SELECT id, name, description, created_at FROM categories ORDER BY name ASC');
   res.json(cats);
 }));

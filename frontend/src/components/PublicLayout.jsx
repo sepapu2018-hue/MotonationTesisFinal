@@ -183,7 +183,7 @@ export default function PublicLayout() {
           </div>
         </div>
         <div className="border-t border-white/5">
-          <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between text-[10px] uppercase tracking-widest text-zinc-600 font-mono">
+          <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between text-[10px] uppercase tracking-widest text-zinc-400 font-mono">
             <span>© {new Date().getFullYear()} Motonation · Todos los derechos reservados</span>
             <Link to="/admin/login" className="hover:text-zinc-400 transition-colors" data-testid="admin-discrete-link">
               · Sistema interno ·

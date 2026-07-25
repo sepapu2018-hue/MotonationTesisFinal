@@ -4,6 +4,7 @@ import { useNavigate, Navigate, Link } from "react-router-dom";
 import { Loader2, ShieldCheck } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import OtpInput from "@/components/public/OtpInput";
+import { HudCorners } from "@/components/ui-kit";
 
 const HERO = "https://images.unsplash.com/photo-1489731007795-388eee095ff6?auto=format&fit=crop&w=1600&q=80";
 
@@ -81,6 +82,7 @@ export default function Login() {
       <div className="hidden lg:flex flex-1 relative overflow-hidden">
         <img src={HERO} alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-br from-black/90 via-black/70 to-[#10B981]/25" />
+        <div className="absolute inset-6 pointer-events-none"><HudCorners /></div>
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <div className="flex items-center gap-3">
             <BrandLogo size={44} />
@@ -92,7 +94,7 @@ export default function Login() {
               Sistema<br/>interno<br/><span className="text-[#10B981]">MotoNation</span>
             </h1>
             <p className="text-zinc-300 max-w-md leading-relaxed">
-
+              Inventario, pedidos y catálogo bajo control, en un solo panel.
             </p>
           </div>
           <div className="font-mono text-xs text-zinc-500 uppercase tracking-widest">
@@ -177,7 +179,7 @@ export default function Login() {
               </button>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-white/10 text-[10px] uppercase tracking-widest text-zinc-600 font-mono text-center">
+            <div className="mt-8 pt-6 border-t border-white/10 text-[10px] uppercase tracking-widest text-zinc-400 font-mono text-center">
                  · Acceso restringido
             </div>
           </form>
@@ -240,7 +242,7 @@ export default function Login() {
               </button>
             </div>
 
-            <div className="mt-6 flex items-center justify-between text-[10px] uppercase tracking-widest text-zinc-600 font-mono">
+            <div className="mt-6 flex items-center justify-between text-[10px] uppercase tracking-widest text-zinc-400 font-mono">
               <button type="button" onClick={backToCredentials} className="hover:text-zinc-400" data-testid="otp-back-button">
                 ← Volver
               </button>

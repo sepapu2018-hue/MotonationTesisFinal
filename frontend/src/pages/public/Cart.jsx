@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { Trash2, Minus, Plus, ShoppingBag } from "lucide-react";
-
-const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
+import { formatCurrency as money } from "@/lib/utils";
 
 export default function Cart() {
   const { items, updateQuantity, removeItem, totals } = useCart();
@@ -25,7 +24,7 @@ export default function Cart() {
   if (items.length === 0) {
     return (
       <div className="max-w-xl mx-auto py-32 text-center px-6">
-        <ShoppingBag className="h-16 w-16 text-zinc-700 mx-auto mb-6" />
+        <ShoppingBag className="h-16 w-16 text-zinc-400 mx-auto mb-6" />
         <div className="font-display font-black text-4xl uppercase">Tu carrito está vacío</div>
         <p className="text-zinc-500 mt-3">Empezá a agregar productos desde la tienda</p>
         <Link to="/tienda" className="inline-block mt-8 bg-[#10B981] hover:bg-[#34D399] text-black px-8 py-3 font-display uppercase tracking-widest font-bold">
@@ -41,7 +40,7 @@ export default function Cart() {
         <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-2">// Tu pedido</div>
         <h1 className="font-display font-black text-5xl uppercase leading-none">
           Carrito
-          <span className="timer text-2xl text-zinc-600 ml-3">[{String(totals.count).padStart(2, "0")}]</span>
+          <span className="timer text-2xl text-zinc-400 ml-3">[{String(totals.count).padStart(2, "0")}]</span>
         </h1>
       </div>
 

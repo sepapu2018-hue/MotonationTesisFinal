@@ -7,10 +7,10 @@ import { Package, ChevronRight, X } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { DangerButton } from "@/components/ui-kit";
 import PageLoader from "@/components/public/PageLoader";
+import { formatCurrency as money } from "@/lib/utils";
 
 const CANCELABLE = ["pendiente", "pagado"];
 
-const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
 const STATUS = {
   pendiente: { c: "text-zinc-400 border-zinc-400/40 bg-zinc-400/10", l: "Pendiente" },
   pagado: { c: "text-[#10B981] border-[#10B981]/40 bg-[#10B981]/10", l: "Pagado" },
@@ -77,7 +77,7 @@ export default function MyOrders() {
 
       {orders.length === 0 ? (
         <div className="border border-white/10 bg-[#0E0E0E] p-16 text-center">
-          <Package className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
+          <Package className="h-12 w-12 text-zinc-400 mx-auto mb-4" />
           <div className="font-display font-bold text-2xl uppercase">Aún no tienes pedidos</div>
           <Link to="/tienda" className="inline-block mt-6 bg-[#10B981] hover:bg-[#34D399] text-black px-6 py-3 font-display uppercase tracking-widest font-bold">
             Empezar a comprar
@@ -96,7 +96,7 @@ export default function MyOrders() {
               >
                 <div>
                   <div className="font-mono text-xs text-zinc-500">{o.order_number}</div>
-                  <div className="text-[10px] uppercase tracking-widest text-zinc-600 mt-1">
+                  <div className="text-[10px] uppercase tracking-widest text-zinc-400 mt-1">
                     {new Date(o.created_at).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" })}
                   </div>
                 </div>

@@ -3,11 +3,11 @@ const express = require('express');
 const { z } = require('zod');
 const asyncHandler = require('../utils/asyncHandler');
 const { one, query } = require('../config/db');
-const { authRequired } = require('../middleware/auth');
+const { authRequired, permissionRequired } = require('../middleware/auth');
 const { httpError } = require('../middleware/errorHandler');
 
 const router = express.Router();
-router.use(authRequired);
+router.use(authRequired, permissionRequired('view_reports'));
 
 const rangeSchema = z.object({
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha "desde" inválida (YYYY-MM-DD)'),

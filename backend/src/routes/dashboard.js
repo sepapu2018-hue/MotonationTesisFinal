@@ -2,12 +2,12 @@
 const express = require('express');
 const asyncHandler = require('../utils/asyncHandler');
 const { one, query } = require('../config/db');
-const { authRequired } = require('../middleware/auth');
+const { authRequired, permissionRequired } = require('../middleware/auth');
 
 const router = express.Router();
 router.use(authRequired);
 
-router.get('/stats', asyncHandler(async (req, res) => {
+router.get('/stats', permissionRequired('view_dashboard'), asyncHandler(async (req, res) => {
   const stats = await one(`
     SELECT
       COUNT(*)::int AS total_products,
@@ -36,7 +36,7 @@ router.get('/stats', asyncHandler(async (req, res) => {
   });
 }));
 
-router.get('/low-stock', asyncHandler(async (req, res) => {
+router.get('/low-stock', permissionRequired('view_dashboard', 'view_alerts'), asyncHandler(async (req, res) => {
   const rows = await query(`
     SELECT * FROM products WHERE stock <= min_stock ORDER BY stock ASC
   `);

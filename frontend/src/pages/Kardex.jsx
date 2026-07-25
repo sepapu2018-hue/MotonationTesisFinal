@@ -6,8 +6,7 @@ import autoTable from "jspdf-autotable";
 import { Search, FileText, ArrowDownToLine, ArrowUpFromLine, ShoppingCart, ClipboardCheck, Download, Printer } from "lucide-react";
 import PageLoader from "@/components/public/PageLoader";
 import CountUp from "@/components/CountUp";
-
-const money = (n) => `$${Number(n || 0).toLocaleString("es", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
+import { formatCurrency as money } from "@/lib/utils";
 
 const TYPE_META = {
   entrada: { l: "Entrada", icon: ArrowDownToLine, c: "text-emerald-400 border-emerald-500/40 bg-emerald-500/5", sign: "+" },
@@ -213,7 +212,7 @@ export default function Kardex() {
             </div>
           ) : !data ? (
             <div className="border border-white/10 bg-[#0E0E0E] p-16 text-center">
-              <FileText className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
+              <FileText className="h-12 w-12 text-zinc-400 mx-auto mb-4" />
               <div className="font-display font-bold text-2xl uppercase">Selecciona un producto</div>
             </div>
           ) : (

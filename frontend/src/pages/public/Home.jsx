@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import Reveal from "@/components/public/Reveal";
 import { useTilt } from "@/hooks/useTilt";
+import { formatCurrency as money } from "@/lib/utils";
+import { HudCorners } from "@/components/ui-kit";
 
 const HERO_BG = "https://images.unsplash.com/photo-1611873188697-f672f072ebda?auto=format&fit=crop&w=2000&q=80";
 const COLLECTION_MOTO = "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=1400&q=80";
@@ -23,7 +25,6 @@ const STATS = [
   { value: "24/7", label: "Las 24 hora" },
 ];
 
-const money = (n) => `$${Number(n).toLocaleString("es", { maximumFractionDigits: 0 })}`;
 
 // Reseña individual: tilt 3D sutil + estrellas que aparecen en secuencia.
 // El tilt va en un div interno (no en el que tiene "fade-up") para no pisar
@@ -217,7 +218,7 @@ export default function Home() {
         <div className="relative">
           <div className="flex ticker-track whitespace-nowrap gap-12 px-6">
             {[...BRANDS, ...BRANDS].map((brand, i) => (
-              <div key={i} className="font-display font-black text-3xl md:text-4xl uppercase text-zinc-700 hover:text-[#10B981] transition-colors shrink-0">
+              <div key={i} className="font-display font-black text-3xl md:text-4xl uppercase text-zinc-400 hover:text-[#10B981] transition-colors shrink-0">
                 {brand}
               </div>
             ))}
@@ -248,6 +249,7 @@ export default function Home() {
                 Explorar <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
+            <div className="absolute inset-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300"><HudCorners /></div>
           </Link>
           <Link to="/tienda?type=accesorio" data-testid="collection-gear"
             className="group relative aspect-[16/10] overflow-hidden border border-white/10 hover:border-[#10B981] transition-all">
@@ -261,6 +263,7 @@ export default function Home() {
                 Explorar <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
+            <div className="absolute inset-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300"><HudCorners /></div>
           </Link>
         </div>
       </Reveal>
@@ -372,7 +375,7 @@ export default function Home() {
               <span className="font-display font-bold text-base">
                 {(reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1)}/5
               </span>
-              <span className="text-xs text-zinc-600 uppercase tracking-widest">· {reviews.length} reseñas</span>
+              <span className="text-xs text-zinc-400 uppercase tracking-widest">· {reviews.length} reseñas</span>
             </div>
           )}
         </div>
@@ -422,9 +425,11 @@ export default function Home() {
                     key={n}
                     type="button"
                     onClick={() => setReviewForm({ ...reviewForm, rating: n })}
+                    aria-label={`Calificar con ${n} estrella${n > 1 ? "s" : ""}`}
+                    aria-pressed={reviewForm.rating === n}
                     data-testid={`review-star-${n}`}
                   >
-                    <Star className={`h-5 w-5 ${n <= reviewForm.rating ? "fill-[#F59E0B] text-[#F59E0B]" : "text-zinc-600"}`} />
+                    <Star className={`h-5 w-5 ${n <= reviewForm.rating ? "fill-[#F59E0B] text-[#F59E0B]" : "text-zinc-400"}`} />
                   </button>
                 ))}
               </div>

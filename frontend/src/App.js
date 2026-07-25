@@ -24,6 +24,7 @@ import Orders from "@/pages/Orders";
 import Reviews from "@/pages/Reviews";
 import AuditLog from "@/pages/AuditLog";
 import Reports from "@/pages/Reports";
+import NoAccess from "@/pages/NoAccess";
 
 // Public pages
 import Home from "@/pages/public/Home";
@@ -68,16 +69,17 @@ function App() {
                 <Route path="/admin/restablecer" element={<ResetPasswordStaff />} />
                 <Route path="/admin" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                   <Route index element={<Navigate to="/admin/dashboard" replace />} />
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="productos" element={<Products />} />
-                  <Route path="categorias" element={<Categories />} />
-                  <Route path="proveedores" element={<Suppliers />} />
-                  <Route path="movimientos" element={<Movements />} />
-                  <Route path="kardex" element={<Kardex />} />
-                  <Route path="pedidos" element={<Orders />} />
-                  <Route path="resenas" element={<Reviews />} />
-                  <Route path="alertas" element={<Alerts />} />
-                  <Route path="reportes" element={<Reports />} />
+                  <Route path="sin-acceso" element={<NoAccess />} />
+                  <Route path="dashboard" element={<ProtectedRoute permission="view_dashboard"><Dashboard /></ProtectedRoute>} />
+                  <Route path="productos" element={<ProtectedRoute permission="view_products"><Products /></ProtectedRoute>} />
+                  <Route path="categorias" element={<ProtectedRoute permission="view_categories"><Categories /></ProtectedRoute>} />
+                  <Route path="proveedores" element={<ProtectedRoute permission="view_suppliers"><Suppliers /></ProtectedRoute>} />
+                  <Route path="movimientos" element={<ProtectedRoute permission="create_sale"><Movements /></ProtectedRoute>} />
+                  <Route path="kardex" element={<ProtectedRoute permission="view_kardex"><Kardex /></ProtectedRoute>} />
+                  <Route path="pedidos" element={<ProtectedRoute permission="view_orders"><Orders /></ProtectedRoute>} />
+                  <Route path="resenas" element={<ProtectedRoute permission="view_reviews"><Reviews /></ProtectedRoute>} />
+                  <Route path="alertas" element={<ProtectedRoute permission="view_alerts"><Alerts /></ProtectedRoute>} />
+                  <Route path="reportes" element={<ProtectedRoute permission="view_reports"><Reports /></ProtectedRoute>} />
                   <Route path="usuarios" element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
                   <Route path="auditoria" element={<ProtectedRoute adminOnly><AuditLog /></ProtectedRoute>} />
                 </Route>

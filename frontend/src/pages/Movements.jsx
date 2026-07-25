@@ -1,9 +1,11 @@
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { PrimaryButton, GhostButton, Field, inputClass, Badge } from "@/components/ui-kit";
 import { ArrowDownToLine, ArrowUpFromLine, Plus, X, Activity, Loader2, ClipboardCheck } from "lucide-react";
+import { useDialogA11y } from "@/hooks/useDialogA11y";
+import PageLoader from "@/components/public/PageLoader";
 
 const emptyForm = { product_id: "", type: "entrada", quantity: 1, reason: "", direction: "positivo", supplier_id: "" };
 
@@ -13,12 +15,15 @@ export default function Movements() {
   const [products, setProducts] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const closeForm = useCallback(() => setShowForm(false), []);
+  const formDialogRef = useDialogA11y(showForm, closeForm);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [highlightId, setHighlightId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const load = () => api.get("/movements?limit=300").then((r) => setMovs(r.data)).catch((err) => toast.error(formatApiError(err)));
+  const load = () => api.get("/movements?limit=300").then((r) => setMovs(r.data)).catch((err) => toast.error(formatApiError(err))).finally(() => setLoading(false));
 
   useEffect(() => {
     load();
@@ -79,7 +84,7 @@ export default function Movements() {
           <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-2">// Auditoría · Stock</div>
           <h1 className="font-display font-black text-5xl uppercase leading-none tracking-tight flex items-end gap-3">
             Movimientos
-            <span className="timer text-2xl text-zinc-600">[{String(stats.total).padStart(4, "0")}]</span>
+            <span className="timer text-2xl text-zinc-400">[{String(stats.total).padStart(4, "0")}]</span>
           </h1>
         </div>
         <PrimaryButton testid="new-movement-button" onClick={() => { setError(""); setShowForm(true); }}>
@@ -113,6 +118,9 @@ export default function Movements() {
         </aside>
 
         <div className="col-span-12 lg:col-span-9 lg:order-2 order-1 border border-white/10 bg-[#0E0E0E]">
+          {loading ? (
+            <div className="p-6"><PageLoader variant="list" /></div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="border-b border-white/10">
@@ -155,23 +163,35 @@ export default function Movements() {
                     </tr>
                   );
                 })}
+                {movs.length === 0 && (
+                  <tr><td colSpan={7} className="px-4 py-12 text-center text-zinc-500 text-xs uppercase tracking-widest">Sin movimientos registrados</td></tr>
+                )}
               </tbody>
             </table>
           </div>
+          )}
         </div>
       </div>
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4">
-          <form onSubmit={submit} className="w-full max-w-md bg-[#141414] border border-white/10 p-8 shadow-2xl">
+          <form
+            ref={formDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="movement-modal-title"
+            tabIndex={-1}
+            onSubmit={submit}
+            className="w-full max-w-md bg-[#141414] border border-white/10 p-8 shadow-2xl outline-none"
+          >
             <div className="flex items-center justify-between mb-6">
               <div>
                 <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#10B981] mb-1">// Nueva Operación</div>
-                <h3 className="font-display font-black text-2xl uppercase">Registrar</h3>
+                <h3 id="movement-modal-title" className="font-display font-black text-2xl uppercase">Registrar</h3>
               </div>
-              <button type="button" onClick={() => setShowForm(false)} className="text-zinc-500 hover:text-white"><X /></button>
+              <button type="button" onClick={closeForm} aria-label="Cerrar" className="text-zinc-500 hover:text-white"><X /></button>
             </div>
-            
+
             <div className="space-y-4">
               <Field label="Producto">
                 <select required value={form.product_id} onChange={(e) => setForm({ ...form, product_id: e.target.value })} className={inputClass()}>
@@ -181,20 +201,20 @@ export default function Movements() {
               </Field>
               <Field label="Tipo">
                 <div className="grid grid-cols-3 gap-2">
-                  <button type="button" onClick={() => setForm({ ...form, type: "entrada" })}
+                  <button type="button" aria-pressed={form.type === "entrada"} onClick={() => setForm({ ...form, type: "entrada" })}
                     className={`py-2 text-xs font-bold uppercase ${form.type === "entrada" ? "bg-emerald-500/20 border-emerald-500 text-emerald-400" : "border-white/15 text-zinc-400"} border`}>Entrada</button>
-                  <button type="button" onClick={() => setForm({ ...form, type: "salida" })}
+                  <button type="button" aria-pressed={form.type === "salida"} onClick={() => setForm({ ...form, type: "salida" })}
                     className={`py-2 text-xs font-bold uppercase ${form.type === "salida" ? "bg-amber-500/20 border-amber-500 text-amber-400" : "border-white/15 text-zinc-400"} border`}>Salida</button>
-                  <button type="button" onClick={() => setForm({ ...form, type: "ajuste" })}
+                  <button type="button" aria-pressed={form.type === "ajuste"} onClick={() => setForm({ ...form, type: "ajuste" })}
                     className={`py-2 text-xs font-bold uppercase ${form.type === "ajuste" ? "bg-sky-500/20 border-sky-500 text-sky-400" : "border-white/15 text-zinc-400"} border`}>Ajuste</button>
                 </div>
               </Field>
               {form.type === "ajuste" && (
                 <Field label="Dirección del ajuste">
                   <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => setForm({ ...form, direction: "positivo" })}
+                    <button type="button" aria-pressed={form.direction === "positivo"} onClick={() => setForm({ ...form, direction: "positivo" })}
                       className={`py-2 text-xs font-bold uppercase ${form.direction === "positivo" ? "bg-emerald-500/20 border-emerald-500 text-emerald-400" : "border-white/15 text-zinc-400"} border`}>Sube stock (+)</button>
-                    <button type="button" onClick={() => setForm({ ...form, direction: "negativo" })}
+                    <button type="button" aria-pressed={form.direction === "negativo"} onClick={() => setForm({ ...form, direction: "negativo" })}
                       className={`py-2 text-xs font-bold uppercase ${form.direction === "negativo" ? "bg-amber-500/20 border-amber-500 text-amber-400" : "border-white/15 text-zinc-400"} border`}>Baja stock (−)</button>
                   </div>
                 </Field>

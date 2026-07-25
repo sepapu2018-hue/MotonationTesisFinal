@@ -36,7 +36,7 @@ export default function Alerts() {
           <div className="text-[10px] text-amber-400 font-mono uppercase tracking-[0.3em] mb-2">// Stock Crítico</div>
           <h1 className="font-display font-black text-5xl uppercase leading-none tracking-tight flex items-end gap-3">
             Alertas
-            <span className="timer text-2xl text-zinc-600">[{String(items.length).padStart(3, "0")}]</span>
+            <span className="timer text-2xl text-zinc-400">[{String(items.length).padStart(3, "0")}]</span>
           </h1>
         </div>
       </div>

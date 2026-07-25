@@ -46,6 +46,20 @@ function adminRequired(req, res, next) {
   next();
 }
 
+// Autorización por permiso granular (ej. "view_reports"). Los admin siempre pasan;
+// un empleado necesita tener AL MENOS UNO de los permisos listados en req.user.permissions.
+// Antes esto solo se validaba en el frontend (ocultar el link del menú), así que un empleado
+// podía llamar la API directo sin el permiso correspondiente — esto lo bloquea también acá.
+function permissionRequired(...allowed) {
+  return (req, res, next) => {
+    if (!req.user) return res.status(401).json({ detail: 'No autenticado' });
+    if (req.user.role === 'admin') return next();
+    const perms = Array.isArray(req.user.permissions) ? req.user.permissions : [];
+    if (allowed.some((p) => perms.includes(p))) return next();
+    return res.status(403).json({ detail: 'Acceso denegado: no tienes permiso para esta acción' });
+  };
+}
+
 async function customerRequired(req, res, next) {
   // CORREGIDO: customer_access_token en lugar de customer_token
   const token = extractToken(req, 'customer_access_token') || extractToken(req, 'access_token');
@@ -74,4 +88,4 @@ async function customerRequired(req, res, next) {
   }
 }
 
-module.exports = { authRequired, adminRequired, customerRequired };
+module.exports = { authRequired, adminRequired, customerRequired, permissionRequired };

@@ -13,7 +13,7 @@ if (process.env.DATABASE_URL) {
   // Si estamos en local (pgAdmin), pasamos las credenciales ordenadas como objeto individual
   poolConfig = {
     user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'root1253',
+    password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'motonation-final',
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),

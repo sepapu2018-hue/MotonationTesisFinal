@@ -16,6 +16,7 @@ const { sendPasswordResetEmail, isConfigured: mailerConfigured } = require('../u
 
 const router = express.Router();
 const FRONTEND_URL = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000';
+const isProd = process.env.NODE_ENV === 'production';
 
 // Protección anti fuerza bruta: máx. 10 intentos cada 15 min por IP
 const loginLimiter = rateLimit({
@@ -105,14 +106,17 @@ router.post('/forgot-password', loginLimiter, asyncHandler(async (req, res) => {
   if (mailerConfigured()) {
     try {
       await sendPasswordResetEmail(normalized, resetLink);
-      res.json({ ok: true });
     } catch (err) {
       console.error('Error enviando email de recuperación:', err);
-      // Si falla el envío, se entrega el enlace en la respuesta para no bloquear al usuario
-      res.json({ ok: true, dev_reset_token: rawToken });
+      // Fail-closed: si el correo no salió, NO se expone el enlace/token en la respuesta
+      // (antes se devolvía igual y eso permitía resetear cualquier contraseña sin acceso al correo).
     }
+    res.json({ ok: true });
+  } else if (isProd) {
+    // Sin GMAIL_USER/GMAIL_APP_PASSWORD configurados en producción: no se expone el token.
+    res.json({ ok: true });
   } else {
-    // Sin GMAIL_USER/GMAIL_APP_PASSWORD configurados: el token se devuelve directo en la respuesta
+    // Solo en desarrollo se devuelve el token directo en la respuesta.
     res.json({ ok: true, dev_reset_token: rawToken });
   }
 }));

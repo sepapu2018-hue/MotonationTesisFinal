@@ -227,6 +227,44 @@ body {
 }
 .testimonial-card:hover::before { left: 130%; }
 
+/* --- Evolución visual: lenguaje "telemetría HUD" ---
+   Marcas de esquina tipo visor/HUD (ver componente <HudCorners />) y detalles
+   de panel técnico (borde biselado, acento superior) que refuerzan el motivo
+   de tablero de carreras ya presente (circuit-grid, checker, timer). */
+.hud-corner {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+    border-color: #10B981;
+}
+.hud-corner-tl { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; }
+.hud-corner-tr { top: -1px; right: -1px; border-top: 2px solid; border-right: 2px solid; }
+.hud-corner-bl { bottom: -1px; left: -1px; border-bottom: 2px solid; border-left: 2px solid; }
+.hud-corner-br { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
+
+/* Bisel de panel técnico: esquina superior derecha cortada, como un chasis */
+.panel-clip {
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+}
+.panel-clip-sm {
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+
+/* Acento superior de panel: línea que se degrada desde el verde de marca */
+.panel-accent-top {
+    position: relative;
+}
+.panel-accent-top::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #10B981, rgba(16, 185, 129, 0) 75%);
+}
+
 /* Logo de marca: pequeño "vivo" al pasar el mouse, en cualquier lugar donde se use */
 .brand-logo-anim {
     transition: transform 0.35s ease, filter 0.35s ease;
