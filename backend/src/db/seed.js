@@ -7,33 +7,25 @@ async function seedUsers() {
   const adminEmail = 'admin@motonation.com';
   const empEmail = 'empleado@motonation.com';
 
-  const adminExists = await one('SELECT id FROM users WHERE email = $1', [adminEmail]);
-  if (!adminExists) {
-    // Ponemos una contraseña fija: 'admin123'
-    const hash = await bcrypt.hash('admin123', 10);
-    await query(
-      'INSERT INTO users (email, name, password_hash, role) VALUES ($1, $2, $3, $4)',
-      [adminEmail, 'Administrador', hash, 'admin']
-    );
-    console.log('[seed] admin creado');
-  }
+  // INSERT ... ON CONFLICT DO NOTHING en vez de "check-then-insert": en Vercel pueden
+  // arrancar varias instancias en paralelo en el primer tráfico y correr el seed a la
+  // vez, así que el chequeo previo (SELECT) no evita la carrera entre instancias.
+  const adminHash = await bcrypt.hash('admin123', 10);
+  await query(
+    `INSERT INTO users (email, name, password_hash, role) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (email) DO NOTHING`,
+    [adminEmail, 'Administrador', adminHash, 'admin']
+  );
 
-  const empExists = await one('SELECT id FROM users WHERE email = $1', [empEmail]);
-  if (!empExists) {
-    // Ponemos una contraseña fija: 'empleado123'
-    const hash = await bcrypt.hash('empleado123', 10);
-    await query(
-      'INSERT INTO users (email, name, password_hash, role) VALUES ($1, $2, $3, $4)',
-      [empEmail, 'Empleado Demo', hash, 'empleado']
-    );
-    console.log('[seed] empleado creado');
-  }
+  const empHash = await bcrypt.hash('empleado123', 10);
+  await query(
+    `INSERT INTO users (email, name, password_hash, role) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (email) DO NOTHING`,
+    [empEmail, 'Empleado Demo', empHash, 'empleado']
+  );
 }
 
 async function seedCategories() {
-  const count = await one('SELECT COUNT(*)::int AS c FROM categories');
-  if (count.c > 0) return;
-
   const data = [
     ['Deportivas', 'Motocicletas deportivas de alta cilindrada'],
     ['Naked', 'Motocicletas tipo naked / street'],
@@ -44,15 +36,14 @@ async function seedCategories() {
   ];
 
   for (const [name, desc] of data) {
-    await query('INSERT INTO categories (name, description) VALUES ($1, $2)', [name, desc]);
+    await query(
+      'INSERT INTO categories (name, description) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING',
+      [name, desc]
+    );
   }
-  console.log('[seed] categorias creadas');
 }
 
 async function seedProducts() {
-  const count = await one('SELECT COUNT(*)::int AS c FROM products');
-  if (count.c > 0) return;
-
   const cats = await query('SELECT id, name FROM categories');
   const byName = Object.fromEntries(cats.map((c) => [c.name, c.id]));
 
@@ -76,23 +67,21 @@ async function seedProducts() {
   for (const p of products) {
     await query(
       `INSERT INTO products (sku, name, type, brand, model, category_id, cost, price, stock, min_stock, image_url)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       ON CONFLICT (sku) DO NOTHING`,
       p
     );
   }
-  console.log(`[seed] ${products.length} productos creados`);
 }
 
 async function seedCustomer() {
-  const exists = await one('SELECT id FROM customers WHERE email = $1', ['cliente@demo.com']);
-  if (exists) return;
   const hash = await bcrypt.hash('Cliente123!', 10);
   await query(
     `INSERT INTO customers (email, name, password_hash, phone, address, city)
-     VALUES ($1,$2,$3,$4,$5,$6)`,
+     VALUES ($1,$2,$3,$4,$5,$6)
+     ON CONFLICT (email) DO NOTHING`,
     ['cliente@demo.com', 'Cliente Demo', hash, '+593 99 999 9999', 'Av. Siempre Viva 742', 'Guayaquil']
   );
-  console.log('[seed] cliente demo creado');
 }
 
 async function run() {
