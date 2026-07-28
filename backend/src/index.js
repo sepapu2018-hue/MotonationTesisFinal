@@ -49,22 +49,12 @@ const allowedOrigins = [
   .flatMap((v) => (v ? v.split(',').map((s) => s.trim()) : []))
   .filter(Boolean);
 
-// Vercel genera, además del dominio principal del proyecto, un dominio distinto
-// por rama y por cada deploy (ej. proyecto-git-main-equipo.vercel.app,
-// proyecto-<hash>-equipo.vercel.app). Para no tener que actualizar CORS_ORIGIN
-// cada vez que aparece uno nuevo, se acepta cualquier subdominio *.vercel.app
-// que empiece igual que el dominio principal configurado en FRONTEND_URL.
-const vercelProjectPrefix = (() => {
-  try {
-    const host = new URL(process.env.FRONTEND_URL).hostname;
-    return host.endsWith('.vercel.app') ? host.replace(/\.vercel\.app$/, '') : null;
-  } catch {
-    return null;
-  }
-})();
-const vercelPreviewRegex = vercelProjectPrefix
-  ? new RegExp(`^https://${vercelProjectPrefix}(-[a-z0-9-]+)?\\.vercel\\.app$`)
-  : null;
+// Vercel genera, además del dominio principal del proyecto frontend
+// (motonation-tesis-final-2tld.vercel.app), un dominio distinto por rama y por
+// cada deploy (ej. motonation-tesis-final-2tld-git-main-<equipo>.vercel.app,
+// motonation-tesis-final-2tld-<hash>-<equipo>.vercel.app). Se aceptan todos sin
+// tener que actualizar CORS_ORIGIN cada vez que aparece uno nuevo.
+const vercelPreviewRegex = /^https:\/\/motonation-tesis-final-2tld(-[a-z0-9-]+)*\.vercel\.app$/;
 
 function isOriginAllowed(origin) {
   if (!origin) return true; // sin Origin: clientes no-navegador (curl, Postman, servidor-a-servidor)
