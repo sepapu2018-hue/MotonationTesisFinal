@@ -36,18 +36,45 @@ const app = express();
 app.use(helmet({ contentSecurityPolicy: false }));
 
 // --- CONFIGURACIÓN DE CORS ---
-// ✅ CORREGIDO: Se permite una lista de puertos (3000, 5173, 5174) para que 
+// ✅ CORREGIDO: Se permite una lista de puertos (3000, 5173, 5174) para que
 // el navegador guarde las cookies de sesión sin importar el puerto del frontend.
+// CORS_ORIGIN/FRONTEND_URL admiten varios orígenes separados por coma.
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:5174',
   process.env.FRONTEND_URL,
   process.env.CORS_ORIGIN,
-].filter(Boolean);
+]
+  .flatMap((v) => (v ? v.split(',').map((s) => s.trim()) : []))
+  .filter(Boolean);
+
+// Vercel genera, además del dominio principal del proyecto, un dominio distinto
+// por rama y por cada deploy (ej. proyecto-git-main-equipo.vercel.app,
+// proyecto-<hash>-equipo.vercel.app). Para no tener que actualizar CORS_ORIGIN
+// cada vez que aparece uno nuevo, se acepta cualquier subdominio *.vercel.app
+// que empiece igual que el dominio principal configurado en FRONTEND_URL.
+const vercelProjectPrefix = (() => {
+  try {
+    const host = new URL(process.env.FRONTEND_URL).hostname;
+    return host.endsWith('.vercel.app') ? host.replace(/\.vercel\.app$/, '') : null;
+  } catch {
+    return null;
+  }
+})();
+const vercelPreviewRegex = vercelProjectPrefix
+  ? new RegExp(`^https://${vercelProjectPrefix}(-[a-z0-9-]+)?\\.vercel\\.app$`)
+  : null;
+
+function isOriginAllowed(origin) {
+  if (!origin) return true; // sin Origin: clientes no-navegador (curl, Postman, servidor-a-servidor)
+  if (allowedOrigins.includes(origin)) return true;
+  if (vercelPreviewRegex && vercelPreviewRegex.test(origin)) return true;
+  return false;
+}
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => callback(null, isOriginAllowed(origin)),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -70,7 +97,7 @@ app.use((req, res, next) => {
   }
   if (!origin) return next();
 
-  if (!allowedOrigins.includes(origin)) {
+  if (!isOriginAllowed(origin)) {
     return res.status(403).json({ detail: 'Origen no permitido' });
   }
   next();
