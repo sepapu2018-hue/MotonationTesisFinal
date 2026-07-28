@@ -1,6 +1,14 @@
 import axios from "axios";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5001";
+// En local, el frontend (puerto 3000) y el backend (puerto 5001) corren en
+// procesos/dominios distintos, así que hace falta la URL absoluta. En
+// cualquier dominio desplegado (Vercel: principal, de rama o de preview) las
+// llamadas van por ruta relativa: `vercel.json` las reenvía al backend sin
+// salir del mismo origen, para que la cookie de sesión no se trate como de
+// terceros (los navegadores móviles la bloquean si el origen es distinto,
+// lo que rompía el login/checkout en celular).
+const isLocalhost = typeof window !== "undefined" && ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const BACKEND_URL = isLocalhost ? (process.env.REACT_APP_BACKEND_URL || "http://localhost:5001") : "";
 
 const api = axios.create({
   baseURL: `${BACKEND_URL}/api`,
