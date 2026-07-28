@@ -1,10 +1,77 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { Card, PageHeader } from "@/components/ui-kit";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import PageLoader from "@/components/public/PageLoader";
-import { Trash2, Star } from "lucide-react";
+import { Trash2, Star, MessageSquare, Bike, ShoppingBag } from "lucide-react";
+
+function ReviewsTable({ reviews, onDelete, showProduct }) {
+  if (reviews.length === 0) {
+    return (
+      <div className="px-4 py-8 text-center text-zinc-500 text-xs uppercase tracking-widest">
+        Sin reseñas en esta categoría
+      </div>
+    );
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="border-b border-white/10">
+          <tr className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold text-left">
+            <th className="px-4 py-3">Nombre</th>
+            <th className="px-4 py-3">Ciudad</th>
+            {showProduct && <th className="px-4 py-3">Producto</th>}
+            <th className="px-4 py-3">Calificación</th>
+            <th className="px-4 py-3">Comentario</th>
+            <th className="px-4 py-3">Fecha</th>
+            <th className="px-4 py-3 w-16"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {reviews.map((r) => (
+            <tr key={r.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+              <td className="px-4 py-3 font-semibold whitespace-nowrap">{r.name}</td>
+              <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">{r.city}</td>
+              {showProduct && (
+                <td className="px-4 py-3 text-zinc-400 whitespace-nowrap max-w-[220px] truncate" title={r.product_name}>
+                  {r.product_name}
+                </td>
+              )}
+              <td className="px-4 py-3 whitespace-nowrap">
+                <span className="inline-flex items-center gap-0.5 text-amber-400">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="h-3.5 w-3.5" fill={i < r.rating ? "currentColor" : "none"} />
+                  ))}
+                </span>
+              </td>
+              <td className="px-4 py-3 text-zinc-300 max-w-[360px] truncate" title={r.text}>{r.text}</td>
+              <td className="px-4 py-3 text-zinc-500 text-xs whitespace-nowrap">
+                {new Date(r.created_at).toLocaleDateString("es", { dateStyle: "medium" })}
+              </td>
+              <td className="px-4 py-3 text-right">
+                <button onClick={() => onDelete(r)} className="p-2 hover:text-red-400" data-testid={`delete-review-${r.id}`}>
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SectionHeader({ icon: Icon, title, count }) {
+  return (
+    <div className="flex items-center justify-between px-4 pt-4 pb-2">
+      <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.3em] text-[#10B981]">
+        <Icon className="h-3.5 w-3.5" /> {title}
+      </div>
+      <span className="timer text-lg text-zinc-400">[{String(count).padStart(3, "0")}]</span>
+    </div>
+  );
+}
 
 export default function Reviews() {
   const [reviews, setReviews] = useState([]);
@@ -30,68 +97,42 @@ export default function Reviews() {
     }
   };
 
+  // Todas las reseñas que devuelve la API (sin límite) — solo se separan por
+  // categoría para que se lean claras en vez de una sola tabla mezclada.
+  const { general, motos, accesorios } = useMemo(() => {
+    const general = reviews.filter((r) => !r.product_id);
+    const motos = reviews.filter((r) => r.product_type === "motocicleta");
+    const accesorios = reviews.filter((r) => r.product_id && r.product_type !== "motocicleta");
+    return { general, motos, accesorios };
+  }, [reviews]);
+
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-8">
       <PageHeader kicker="Tienda" title="Reseñas" testid="reviews-header" count={reviews.length} />
       <p className="text-xs text-zinc-500 -mt-4 mb-6">
-        Los testimonios generales de la Home solo muestran los 3 más recientes (las anteriores se borran automáticamente). Las reseñas ligadas a un producto no tienen ese límite.
+        Los testimonios generales de la Home solo muestran los 3 más recientes en el sitio público (las anteriores se borran automáticamente), pero acá abajo se listan todas. Las reseñas ligadas a un producto no tienen ese límite.
       </p>
 
-      <Card className="fade-up">
-        {loading ? (
-          <div className="p-6"><PageLoader variant="list" /></div>
-        ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm" data-testid="reviews-table">
-            <thead className="border-b border-white/10">
-              <tr className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold text-left">
-                <th className="px-4 py-3">Nombre</th>
-                <th className="px-4 py-3">Ciudad</th>
-                <th className="px-4 py-3">Producto</th>
-                <th className="px-4 py-3">Calificación</th>
-                <th className="px-4 py-3">Comentario</th>
-                <th className="px-4 py-3">Fecha</th>
-                <th className="px-4 py-3 w-16"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {reviews.map((r) => (
-                <tr key={r.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                  <td className="px-4 py-3 font-semibold whitespace-nowrap">{r.name}</td>
-                  <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">{r.city}</td>
-                  <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">
-                    {r.product_name || <span className="text-zinc-400">— General —</span>}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="inline-flex items-center gap-0.5 text-amber-400">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} className="h-3.5 w-3.5" fill={i < r.rating ? "currentColor" : "none"} />
-                      ))}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-zinc-300 max-w-[360px] truncate">{r.text}</td>
-                  <td className="px-4 py-3 text-zinc-500 text-xs whitespace-nowrap">
-                    {new Date(r.created_at).toLocaleDateString("es", { dateStyle: "medium" })}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button onClick={() => setToDelete(r)} className="p-2 hover:text-red-400" data-testid={`delete-review-${r.id}`}>
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {reviews.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-zinc-400 text-xs uppercase tracking-widest">
-                    Sin reseñas registradas
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      {loading ? (
+        <Card className="p-6"><PageLoader variant="list" /></Card>
+      ) : (
+        <div className="space-y-6">
+          <Card className="fade-up" data-testid="reviews-general">
+            <SectionHeader icon={MessageSquare} title="Generales (Home)" count={general.length} />
+            <ReviewsTable reviews={general} onDelete={setToDelete} showProduct={false} />
+          </Card>
+
+          <Card className="fade-up" style={{ animationDelay: "0.05s" }} data-testid="reviews-motos">
+            <SectionHeader icon={Bike} title="Motocicletas" count={motos.length} />
+            <ReviewsTable reviews={motos} onDelete={setToDelete} showProduct />
+          </Card>
+
+          <Card className="fade-up" style={{ animationDelay: "0.1s" }} data-testid="reviews-accesorios">
+            <SectionHeader icon={ShoppingBag} title="Accesorios" count={accesorios.length} />
+            <ReviewsTable reviews={accesorios} onDelete={setToDelete} showProduct />
+          </Card>
         </div>
-        )}
-      </Card>
+      )}
 
       <ConfirmDialog
         open={!!toDelete}

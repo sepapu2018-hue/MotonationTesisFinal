@@ -8,3 +8,6 @@ dist/
 .vscode/
 .idea/
 backend/backups/
+
+# Carpeta de notas internas, no debe ser publica en GitHub
+docs/

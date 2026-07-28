@@ -23,6 +23,7 @@ const orderRoutes = require('./routes/orders');
 const reviewRoutes = require('./routes/reviews');
 const auditRoutes = require('./routes/audit');
 const reportRoutes = require('./routes/reports');
+const chatbotRoutes = require('./routes/chatbot');
 
 const { errorHandler } = require('./middleware/errorHandler');
 const { pool } = require('./config/db');
@@ -105,6 +106,7 @@ safeRegister('/api/orders', orderRoutes, 'orderRoutes');
 safeRegister('/api/reviews', reviewRoutes, 'reviewRoutes');
 safeRegister('/api/audit-log', auditRoutes, 'auditRoutes');
 safeRegister('/api/reports', reportRoutes, 'reportRoutes');
+safeRegister('/api/chatbot', chatbotRoutes, 'chatbotRoutes');
 
 app.use('/api/*', (req, res) => res.status(404).json({ detail: 'Ruta no encontrada' }));
 app.use(errorHandler);

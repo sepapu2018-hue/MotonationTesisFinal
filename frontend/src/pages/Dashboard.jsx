@@ -93,13 +93,15 @@ export default function Dashboard() {
                 productos<br />en alerta
               </div>
             </div>
-            <Link
-              to="/admin/alertas"
-              className="mt-5 inline-flex items-center gap-2 self-start text-xs uppercase tracking-widest font-bold text-[#10B981] hover:gap-3 transition-all"
-              data-testid="link-all-alerts"
-            >
-              Revisar alertas <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+            {stats.low_stock_count > 0 && (
+              <a
+                href="#low-stock-panel"
+                className="mt-5 inline-flex items-center gap-2 self-start text-xs uppercase tracking-widest font-bold text-[#10B981] hover:gap-3 transition-all"
+                data-testid="link-all-alerts"
+              >
+                Ver detalle <ArrowRight className="h-3.5 w-3.5 -rotate-90" />
+              </a>
+            )}
           </div>
         </div>
       </section>
@@ -258,7 +260,7 @@ export default function Dashboard() {
         </div>
 
         {/* Bajo stock — span 5 */}
-        <div className="col-span-12 lg:col-span-5 border border-amber-500/20 bg-amber-500/[0.02]">
+        <div id="low-stock-panel" className="col-span-12 lg:col-span-5 border border-amber-500/20 bg-amber-500/[0.02] scroll-mt-6">
           <div className="flex items-center justify-between px-5 py-4 border-b border-amber-500/20">
             <div className="flex items-center gap-3">
               <span className="h-1 w-8 bg-amber-400" />
@@ -287,6 +289,11 @@ export default function Dashboard() {
                 </div>
               </div>
             ))}
+            {low.length > 6 && (
+              <div className="px-5 py-3 text-center text-[10px] uppercase tracking-widest text-zinc-500">
+                +{low.length - 6} más
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -297,7 +304,7 @@ export default function Dashboard() {
 function Tile({ children, className = "", icon: Icon, kicker, accent = false }) {
   return (
     <div
-      className={`${className} relative bg-[#0E0E0E] border ${accent ? "border-[#10B981]/30" : "border-white/10"} p-5 fade-up overflow-hidden`}
+      className={`${className} relative bg-[#0E0E0E] border ${accent ? "border-[#10B981]/30 hover:border-[#10B981]/50" : "border-white/10 hover:border-white/20"} p-5 fade-up overflow-hidden transition-colors`}
     >
       {accent && <span className="absolute top-0 left-0 h-full w-[3px] bg-[#10B981]" />}
       <div className="flex items-center justify-between mb-2">

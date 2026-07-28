@@ -48,13 +48,11 @@ describe('permissionRequired', () => {
   });
 
   it('deja pasar si el empleado tiene AL MENOS UNO de varios permisos aceptados (lógica OR)', () => {
-    // Ej: GET /api/dashboard/low-stock lo usan tanto Dashboard (view_dashboard)
-    // como Alertas (view_alerts) — cualquiera de los dos debe alcanzar.
-    const req = { user: { role: 'empleado', permissions: ['view_alerts'] } };
+    const req = { user: { role: 'empleado', permissions: ['view_reports'] } };
     const res = mockRes();
     const next = jest.fn();
 
-    permissionRequired('view_dashboard', 'view_alerts')(req, res, next);
+    permissionRequired('view_dashboard', 'view_reports')(req, res, next);
 
     expect(next).toHaveBeenCalledTimes(1);
   });

@@ -462,7 +462,7 @@ export default function Home() {
       <Reveal as="section" className="max-w-[1400px] mx-auto px-6 py-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { icon: MapPin, title: "Visítanos", line1: "Av. Francisco de Orellana", line2: "Guayaquil · Ecuador" },
+            { icon: MapPin, title: "Visítanos", line1: "Av. La Prensa N47-131 y Jorge Páez", line2: "Quito · Ecuador" },
             { icon: Phone, title: "Llámanos", line1: "+593 99 999 9999", line2: "Lun a Sáb · 9:00 – 19:00" },
             { icon: Mail, title: "Escríbenos", line1: "contacto@motonation.com", line2: "Respuesta en <24h" },
           ].map((c, i) => (

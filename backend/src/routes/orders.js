@@ -243,17 +243,57 @@ router.get('/:id', authRequired, permissionRequired('view_orders'), asyncHandler
   });
 }));
 
+// Admin: cambia el estado de un pedido. Si el nuevo estado es "cancelado",
+// repone el stock igual que la cancelación del cliente (mismo tipo de movimiento
+// 'entrada'), para que ambos caminos de cancelación dejen el inventario coherente.
 router.put('/:id/status', authRequired, permissionRequired('view_orders'), asyncHandler(async (req, res) => {
   const schema = z.object({
     status: z.enum(['pendiente', 'pagado', 'enviado', 'entregado', 'cancelado']),
   });
   const { status } = schema.parse(req.body);
-  const o = await one(
-    'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
-    [status, req.params.id]
-  );
-  if (!o) throw httpError(404, 'Pedido no encontrado');
-  res.json({ ok: true, status: o.status });
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const orderRes = await client.query('SELECT * FROM orders WHERE id = $1 FOR UPDATE', [req.params.id]);
+    const order = orderRes.rows[0];
+    if (!order) throw httpError(404, 'Pedido no encontrado');
+
+    if (status === 'cancelado') {
+      if (order.status === 'cancelado') {
+        throw httpError(400, 'Este pedido ya está cancelado');
+      }
+      const items = (await client.query('SELECT * FROM order_items WHERE order_id = $1', [order.id])).rows;
+      for (const it of items) {
+        await client.query(
+          'UPDATE products SET stock = stock + $1, updated_at = NOW() WHERE id = $2',
+          [it.quantity, it.product_id]
+        );
+        await client.query(
+          `INSERT INTO movements
+            (product_id, product_name, product_sku, type, quantity, unit_cost, unit_price,
+             reason, user_id, user_name, order_id)
+           VALUES ($1,$2,$3,'entrada',$4,$5,$6,$7,$8,$9,$10)`,
+          [it.product_id, it.product_name, it.product_sku, it.quantity, Number(it.unit_cost), Number(it.unit_price),
+           `Cancelación de pedido ${order.order_number} (admin)`, req.user.id, req.user.name, order.id]
+        );
+      }
+    }
+
+    const updated = await client.query(
+      'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+      [status, order.id]
+    );
+
+    await client.query('COMMIT');
+    res.json({ ok: true, status: updated.rows[0].status });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
 }));
 
 module.exports = router;

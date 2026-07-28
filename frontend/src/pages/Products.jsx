@@ -8,7 +8,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import ProductFormModal from "@/components/products/ProductFormModal";
 import { formatCurrency as money } from "@/lib/utils";
 import PageLoader from "@/components/public/PageLoader";
-import { Plus, Search, Edit2, Trash2, Package, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, Package, Filter, ChevronLeft, ChevronRight, Eye, X } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
@@ -29,6 +29,7 @@ export default function Products() {
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [highlightId, setHighlightId] = useState(null);
+  const [detailProduct, setDetailProduct] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -150,67 +151,64 @@ export default function Products() {
           </div>
 
           {loading ? (
-            <div className="p-6"><PageLoader variant="list" /></div>
+            <div className="p-6"><PageLoader variant="grid" /></div>
+          ) : items.length === 0 ? (
+            <div className="px-4 py-16 text-center text-zinc-500">Sin productos que coincidan</div>
           ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm" data-testid="products-table">
-              <thead className="border-b border-white/10">
-                <tr className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold text-left">
-                  <th className="px-4 py-3">Producto</th>
-                  <th className="px-4 py-3">SKU</th>
-                  <th className="px-4 py-3">Categoría</th>
-                  <th className="px-4 py-3">Tipo</th>
-                  <th className="px-4 py-3 text-right">Precio</th>
-                  <th className="px-4 py-3 text-right">Stock</th>
-                  <th className="px-4 py-3 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((p) => {
-                  const lowStock = p.stock <= p.min_stock;
-                  return (
-                    <tr key={p.id} className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors ${p.id === highlightId ? "row-highlight" : ""}`} data-testid={`row-${p.sku}`}>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          {p.image_url && <img src={p.image_url} alt="" className="h-10 w-10 object-cover border border-white/10" />}
-                          <div>
-                            <div className="font-semibold">{p.name}</div>
-                            <div className="text-xs text-zinc-500">{p.brand} {p.model}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs text-zinc-400">{p.sku}</td>
-                      <td className="px-4 py-3 text-zinc-300">{catName(p.category_id)}</td>
-                      <td className="px-4 py-3">
-                        <Badge variant={p.type === "motocicleta" ? "info" : "default"}>{p.type}</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-right timer text-base">{money(p.price)}</td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="inline-flex flex-col items-end">
-                          <span className={`timer text-xl ${lowStock ? "text-amber-400" : ""}`}>{p.stock}</span>
-                          {lowStock && <Badge variant="danger">Bajo</Badge>}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        {isAdmin && (
-                          <div className="flex justify-end gap-1">
-                            <button onClick={() => openEdit(p)} aria-label={`Editar ${p.name}`} className="p-2 hover:text-[#10B981] transition-colors" data-testid={`edit-${p.sku}`}>
-                              <Edit2 className="h-4 w-4" />
-                            </button>
-                            <button onClick={() => setToDelete(p)} aria-label={`Eliminar ${p.name}`} className="p-2 hover:text-red-400 transition-colors" data-testid={`delete-${p.sku}`}>
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-                {items.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-12 text-center text-zinc-500">Sin productos que coincidan</td></tr>
-                )}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 p-4" data-testid="products-table">
+            {items.map((p) => {
+              const lowStock = p.stock <= p.min_stock;
+              return (
+                <div
+                  key={p.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setDetailProduct(p)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setDetailProduct(p); }}
+                  className={`group relative border border-white/10 bg-black/20 hover:border-[#10B981]/40 transition-colors cursor-pointer flex flex-col overflow-hidden ${p.id === highlightId ? "row-highlight" : ""}`}
+                  data-testid={`row-${p.sku}`}
+                >
+                  <div className="relative aspect-square bg-black/40 overflow-hidden">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center"><Package className="h-8 w-8 text-zinc-600" /></div>
+                    )}
+                    <span className="absolute top-2 left-2">
+                      <Badge variant={p.type === "motocicleta" ? "info" : "default"}>{p.type}</Badge>
+                    </span>
+                    {lowStock && (
+                      <span className="absolute top-2 right-2"><Badge variant="danger">Bajo</Badge></span>
+                    )}
+                  </div>
+
+                  <div className="p-3 flex-1">
+                    <div className="font-semibold text-sm truncate" title={p.name}>{p.name}</div>
+                    <div className="text-xs text-zinc-500 truncate">{p.brand} {p.model}</div>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="timer text-base">{money(p.price)}</span>
+                      <span className={`timer text-lg ${lowStock ? "text-amber-400" : "text-zinc-300"}`}>{p.stock}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-1 px-2 py-1.5 border-t border-white/5" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => setDetailProduct(p)} aria-label={`Ver ${p.name}`} className="p-1.5 text-zinc-500 hover:text-white transition-colors" data-testid={`view-${p.sku}`}>
+                      <Eye className="h-3.5 w-3.5" />
+                    </button>
+                    {isAdmin && (
+                      <>
+                        <button onClick={() => openEdit(p)} aria-label={`Editar ${p.name}`} className="p-1.5 text-zinc-500 hover:text-[#10B981] transition-colors" data-testid={`edit-${p.sku}`}>
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </button>
+                        <button onClick={() => setToDelete(p)} aria-label={`Eliminar ${p.name}`} className="p-1.5 text-zinc-500 hover:text-red-400 transition-colors" data-testid={`delete-${p.sku}`}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
           )}
 
@@ -271,7 +269,7 @@ export default function Products() {
               <Package className="h-3 w-3" /> Tip
             </div>
             <p className="text-xs text-zinc-300 leading-relaxed">
-              Los productos con stock por debajo del mínimo aparecen en <span className="text-amber-400">Alertas</span>.
+              Los productos con stock por debajo del mínimo aparecen en <span className="text-amber-400">Bajo stock</span> dentro del Dashboard.
               Registra entradas desde el botón <span className="text-[#10B981]">+</span> flotante.
             </p>
           </div>
@@ -294,6 +292,88 @@ export default function Products() {
         onConfirm={confirmDelete}
         onCancel={() => setToDelete(null)}
       />
+
+      {detailProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" onClick={() => setDetailProduct(null)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="product-detail-title"
+            className="w-full max-w-lg bg-[#141414] border border-white/10 p-8 shadow-2xl max-h-[90vh] overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+            data-testid="product-detail-modal"
+          >
+            <div className="flex items-start justify-between mb-6 gap-4">
+              <div className="flex items-center gap-4 min-w-0">
+                {detailProduct.image_url && (
+                  <img src={detailProduct.image_url} alt="" className="h-16 w-16 object-cover border border-white/10 shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#10B981] mb-1">// Ficha de producto</div>
+                  <h3 id="product-detail-title" className="font-display font-black text-xl uppercase truncate">{detailProduct.name}</h3>
+                  <div className="text-xs text-zinc-500 truncate">{detailProduct.brand} {detailProduct.model}</div>
+                </div>
+              </div>
+              <button type="button" onClick={() => setDetailProduct(null)} aria-label="Cerrar" className="text-zinc-500 hover:text-white shrink-0"><X /></button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-sm mb-6">
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">SKU</div>
+                <div className="font-mono text-zinc-200">{detailProduct.sku}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Tipo</div>
+                <Badge variant={detailProduct.type === "motocicleta" ? "info" : "default"}>{detailProduct.type}</Badge>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Categoría</div>
+                <div className="text-zinc-200">{catName(detailProduct.category_id)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Precio</div>
+                <div className="timer text-xl">{money(detailProduct.price)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Stock</div>
+                <div className={`timer text-xl ${detailProduct.stock <= detailProduct.min_stock ? "text-amber-400" : ""}`}>
+                  {detailProduct.stock} <span className="text-xs text-zinc-500 font-sans">/ {detailProduct.min_stock} mín.</span>
+                </div>
+              </div>
+            </div>
+
+            {detailProduct.description && (
+              <div className="mb-6">
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Descripción</div>
+                <p className="text-sm text-zinc-300 leading-relaxed">{detailProduct.description}</p>
+              </div>
+            )}
+
+            {detailProduct.specs && Object.keys(detailProduct.specs).length > 0 && (
+              <div className="mb-6">
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-2">Ficha técnica</div>
+                <div className="border border-white/10 divide-y divide-white/5">
+                  {Object.entries(detailProduct.specs).map(([key, value]) => (
+                    <div key={key} className="flex justify-between px-3 py-2 text-sm">
+                      <span className="text-zinc-500">{key}</span>
+                      <span className="text-zinc-200">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3">
+              <GhostButton type="button" onClick={() => setDetailProduct(null)}>Cerrar</GhostButton>
+              {isAdmin && (
+                <PrimaryButton type="button" onClick={() => { setDetailProduct(null); openEdit(detailProduct); }}>
+                  <Edit2 className="h-4 w-4 inline -mt-0.5 mr-1" /> Editar
+                </PrimaryButton>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

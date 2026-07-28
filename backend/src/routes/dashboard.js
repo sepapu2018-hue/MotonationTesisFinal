@@ -36,7 +36,7 @@ router.get('/stats', permissionRequired('view_dashboard'), asyncHandler(async (r
   });
 }));
 
-router.get('/low-stock', permissionRequired('view_dashboard', 'view_alerts'), asyncHandler(async (req, res) => {
+router.get('/low-stock', permissionRequired('view_dashboard'), asyncHandler(async (req, res) => {
   const rows = await query(`
     SELECT * FROM products WHERE stock <= min_stock ORDER BY stock ASC
   `);

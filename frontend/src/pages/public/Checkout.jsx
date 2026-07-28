@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { useCart } from "@/context/CartContext";
 import { useCustomer } from "@/context/CustomerContext";
@@ -9,7 +10,7 @@ import AnimatedCheck from "@/components/public/AnimatedCheck";
 import { formatCurrency as money } from "@/lib/utils";
 
 export default function Checkout() {
-  const { items, totals, clear, updateQuantity, removeItem } = useCart();
+  const { items, totals, clear, updateQuantity, removeItem, syncWithCatalog } = useCart();
   const { customer } = useCustomer();
   const navigate = useNavigate();
   const [shippingAddress, setShippingAddress] = useState(customer?.address || "");
@@ -17,6 +18,24 @@ export default function Checkout() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(null);
+  const syncedOnce = useRef(false);
+
+  // El precio/stock del carrito puede haber quedado desactualizado (localStorage
+  // no caduca): antes de mostrar el total a pagar se resincroniza contra el
+  // catálogo real, para que lo que el cliente ve sea exactamente lo que se cobra.
+  useEffect(() => {
+    if (syncedOnce.current || items.length === 0) return;
+    syncedOnce.current = true;
+    syncWithCatalog().then(({ priceChanges, removedItems, quantityReduced }) => {
+      priceChanges.forEach((c) =>
+        toast.info(`El precio de "${c.name}" cambió de ${money(c.oldPrice)} a ${money(c.newPrice)}`)
+      );
+      quantityReduced.forEach((c) =>
+        toast.info(`Solo quedan ${c.to} unidades de "${c.name}", se ajustó la cantidad`)
+      );
+      removedItems.forEach((r) => toast.error(`"${r.name}" se quitó del carrito: ${r.reason}`));
+    });
+  }, [items.length, syncWithCatalog]);
 
   if (items.length === 0 && !success) return <Navigate to="/tienda" replace />;
   if (customer === null) return <PageLoader />;

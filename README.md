@@ -1,36 +1,45 @@
 # MotoNation — Sistema Web de Control de Inventarios
 
-Aplicación full-stack que automatiza el registro de stock en tiempo real y la gestión operativa de motocicletas. Incluye alertas de niveles críticos de inventario, kárdex, gestión de pedidos, moderación de reseñas y un control de acceso seguro basado en roles y permisos de usuario.
-
-Incluya sus datos básicos para identificación y control.
+Aplicación full-stack para la concesionaria MotoNation que centraliza el control de inventario, automatiza notificaciones y atiende consultas frecuentes de clientes mediante un chatbot propio. Incluye alertas de niveles críticos de inventario, kárdex, gestión de pedidos, moderación de reseñas y un control de acceso seguro basado en roles y permisos de usuario.
 
 ## Datos del Estudiante
-- **Autor:** Narvaez Leon Jose Sebastian, Daniela Monserratte Pinto Bazante.
-- **Carrera:** Tecnologia De Desarrollo Software.
+- **Autores:** Narvaez Leon Jose Sebastian, Daniela Monserratte Pinto Bazante.
+- **Carrera:** Tecnología de Desarrollo de Software.
 - **Docente:** Jonathan Quespaz
 - **Período:** 2026-1
 
-## Estado Actual del Proyecto y Próximos Alcances
+## Cumplimiento de los Objetivos del Plan de Titulación
 
-Hasta la fecha, el desarrollo de la plataforma ha avanzado significativamente, consolidando tanto la infraestructura principal como gran parte de los módulos administrativos y comerciales. Actualmente, el sistema cuenta con una base sólida y funcional que permite gestionar las operaciones internas del negocio de manera eficiente, manteniendo una arquitectura escalable para futuras mejoras.
+| # | Objetivo específico | Cómo se cumple en el sistema |
+|---|----------------------|-------------------------------|
+| 1 | Analizar los requerimientos funcionales y no funcionales de la página web de la concesionaria. | Requerimientos levantados con el Product Owner y documentados como historias de usuario; se reflejan en el modelo de datos (`backend/src/db/schema.sql`) y en los roles/permisos del sistema (sección 10). |
+| 2 | Diseñar una interfaz web intuitiva y accesible para la información de la empresa y sus productos. | Interfaz construida con Tailwind CSS bajo una identidad visual consistente (verde esmeralda + negro), navegación clara entre secciones institucionales y catálogo, componentes reutilizables y ajustes de accesibilidad (foco de teclado, contraste, roles ARIA). |
+| 3 | Implementar un módulo de inventario digital para el registro y consulta de motos y accesorios. | Módulo de Productos, Categorías, Proveedores, Movimientos (entrada/salida/venta/ajuste), Kárdex con exportación a PDF, costeo por promedio ponderado y Alertas de stock mínimo (secciones 6 y 7). |
+| 4 | Integrar un chatbot que responda de forma automatizada las consultas frecuentes de los clientes. | Chatbot de atención al cliente (`backend/src/utils/chatbotEngine.js`) visible en todo el sitio público; responde horario, ubicación, métodos de pago, envíos, garantía y disponibilidad/precio consultando el catálogo real en vivo. |
+| 5 | Evaluar el funcionamiento del sistema mediante pruebas que verifiquen su desempeño y usabilidad. | Suite de pruebas automatizadas con Jest (sección 8.1) y checklist de pruebas funcionales manuales validadas con el beneficiario (sección 8.3). |
 
-## Lo que tenemos desarrollado hasta ahora:
+## Estado Actual del Proyecto
+
+El desarrollo de la plataforma se encuentra en una fase avanzada, con la infraestructura principal y todos los módulos contemplados en el plan de titulación implementados y operativos. El sistema permite gestionar las operaciones internas del negocio de manera eficiente, atender consultas de clientes de forma automatizada y mantiene una arquitectura escalable para futuras mejoras.
+
+## Funcionalidades Implementadas
 
 - **Infraestructura Base y Autenticación:** Servidor completamente operativo, conexión estable con la base de datos PostgreSQL y sistema de autenticación basado en roles de Administrador y Empleado, con tokens de acceso y refresco (JWT), protección anti fuerza bruta en los login y cabeceras de seguridad HTTP (helmet).
-- **Módulo de Administración de Usuarios:** Registro, listado, edición (nombre, correo, rol, permisos granulares y contraseña) y eliminación de usuarios del sistema, con protecciones para no quedarse sin administradores ni auto-eliminarse. Permisos configurables por usuario (Dashboard, Productos, Categorías, Proveedores, Reseñas, Ventas/Movimientos, Kárdex, Pedidos, Alertas).
+- **Módulo de Administración de Usuarios:** Registro, listado, edición (nombre, correo, rol, permisos granulares y contraseña) y eliminación de usuarios del sistema, con protecciones para no quedarse sin administradores ni auto-eliminarse. Permisos configurables por usuario (Dashboard, Productos, Categorías, Proveedores, Reseñas, Ventas/Movimientos, Kárdex, Pedidos, Reportes).
 - **Maquetación y Componentes UI:** Ventanas modales, paneles deslizables, menús interactivos, diálogos de confirmación reutilizables, un Error Boundary global (evita pantallas en blanco ante errores inesperados de React) y componentes bajo la identidad visual deportiva de la marca (verde esmeralda + negro).
 - **Módulo de Inventario:** Gestión de productos (con paginación en el listado), categorías, stock y movimientos de almacén (entradas, salidas, ventas y ajustes por conteo físico).
 - **Ajuste de Inventario por Conteo Físico:** Movimiento dedicado (`ajuste +/-`) con motivo obligatorio para reconciliar el stock del sistema contra un conteo físico real, con trazabilidad igual que cualquier entrada/salida.
 - **Costeo por Promedio Ponderado:** Al registrar una entrada de stock a un costo distinto, el costo del producto se recalcula como promedio ponderado entre el stock existente y la mercadería que entra (en vez de sobrescribirlo).
 - **Módulo de Proveedores:** CRUD de proveedores, ligados opcionalmente a las entradas de stock en Movimientos (trazabilidad de "a quién se le compró").
 - **Sistema de Kárdex:** Registro histórico de entradas/salidas/ventas/ajustes por producto, con exportación a PDF.
-- **Alertas de Stock:** Panel dedicado a productos por debajo del stock mínimo configurado, con notificación automática por correo a los administradores cuando un producto cae por debajo de su mínimo.
+- **Alertas de Stock:** Panel "Bajo stock" integrado en el Dashboard con los productos por debajo del stock mínimo configurado, con notificación automática por correo a los administradores cuando un producto cae por debajo de su mínimo.
 - **Ficha Técnica y Galería de Producto:** Campos libres clave/valor (`specs`, ej. "Cilindraje: 150cc") y galería de imágenes adicionales por producto (`images`), además de la imagen de portada.
 - **Reseñas por Producto:** Además de los testimonios generales de la Home, cada producto puede tener sus propias reseñas públicas (visibles en su ficha de detalle).
 - **Reportes:** Panel de reportes de ventas por rango de fechas (pedidos, subtotal, impuestos, ingresos y top de productos vendidos).
 - **Auditoría:** Registro (`audit_log`) de acciones administrativas sensibles — creación/edición de permisos de usuarios, eliminación de usuarios y eliminación de productos — con detalle de qué cambió.
 - **Notificaciones por Correo:** Además del comprobante de compra al cliente, se notifica por correo a los administradores cuando entra un pedido nuevo y cuando un producto cae en stock bajo (best effort: si el correo falla, la operación de negocio no se bloquea).
-- **Backups:** Respaldo automático diario en Supabase (producción) + scripts propios de backup/restore manual (`npm run backup` / `npm run restore`).
+- **Chatbot de Atención al Cliente:** Widget flotante en el sitio público, motor de reglas 100% propio (sin IA de terceros ni costo de API) que responde horario, ubicación, métodos de pago, envíos, garantía y cómo comprar, y que además consulta el catálogo real en vivo (marca, modelo, categoría) para responder disponibilidad y precio de productos con datos actuales de la base de datos.
+- **Backups:** Respaldo/restauración del proveedor de base de datos en producción (Neon) + scripts propios de backup/restore manual (`npm run backup` / `npm run restore`).
 - **Catálogo Público de Productos:** Visualización de productos para clientes externos con filtros, búsqueda y detalle por SKU.
 - **Cuenta de Cliente:** Registro, login, edición de perfil y recuperación de contraseña ("olvidé mi contraseña" con token de un solo uso).
 - **Carrito de Compras y Checkout:** Flujo funcional para selección de productos, checkout simulado y generación de pedidos con cálculo de impuestos. Al confirmarse la compra, se envía un comprobante por correo al cliente con el detalle de ítems y totales (best effort: si el envío falla, la compra queda igual de confirmada).
@@ -39,21 +48,17 @@ Hasta la fecha, el desarrollo de la plataforma ha avanzado significativamente, c
 - **Sincronización de Inventario:** Actualización automática del stock tras cada venta o cancelación de pedido, con trazabilidad en Kárdex/Movimientos.
 - **Pruebas Automatizadas:** Suite de tests con Jest en el backend (utilidades de precios y tokens) y tests unitarios de permisos en el frontend.
 
-## Aspectos Pendientes de Optimización y Mejora:
+## Trabajo Futuro y Mejoras Planificadas
 
-Aunque los módulos principales ya se encuentran desarrollados y operativos, aún existen procesos de optimización y ajustes para mejorar el rendimiento, la experiencia de usuario y la estabilidad general de la plataforma.
+Los módulos contemplados en el plan de titulación se encuentran desarrollados y operativos. Quedan identificadas las siguientes líneas de mejora continua:
 
-### 1. Mejoras del Núcleo Administrativo:
+### 1. Núcleo Administrativo
 - Ampliar la cobertura de pruebas automatizadas: hoy solo hay tests unitarios de utilidades puras (precios, tokens, costeo) y de permisos en el frontend; falta cobertura de integración de las rutas (auth, products, orders, movements, users, customer, reviews) y tests de componentes en el frontend (no hay `@testing-library/react` instalado todavía).
 
-### 2. Mejoras del Módulo E-commerce:
+### 2. Módulo E-commerce
 - Optimización de la experiencia de navegación y búsqueda de productos.
 - Integración de métodos de pago adicionales (el checkout actual es simulado).
 - Optimización del rendimiento y tiempos de respuesta del catálogo público.
-
-## Estado General del Proyecto
-
-El proyecto se encuentra en una fase avanzada de desarrollo, con la mayoría de las funcionalidades principales implementadas y operativas. El trabajo actual está enfocado principalmente en optimizar procesos, corregir detalles menores, mejorar la experiencia de usuario y fortalecer la integración entre los distintos módulos para garantizar un sistema más eficiente, estable y preparado para su despliegue final.
 
 > **Stack:** React.js + Node.js (Express) + PostgreSQL · Diseño "moderno y deportivo" en **verde esmeralda + negro**.
 
@@ -99,7 +104,8 @@ backend/
     │   ├── costing.js            ← costeo por promedio ponderado en entradas de stock
     │   ├── mailer.js             ← envío de correos (nodemailer/Gmail): recuperación, 2FA, comprobante de compra, notificaciones admin
     │   ├── auditLog.js           ← helper para registrar acciones administrativas en audit_log
-    │   └── stockAlerts.js        ← dispara el correo de stock bajo cuando corresponde
+    │   ├── stockAlerts.js        ← dispara el correo de stock bajo cuando corresponde
+    │   └── chatbotEngine.js      ← motor de reglas del chatbot (clasificación de intención + búsqueda en catálogo real)
     ├── db/
     │   ├── schema.sql            ← DDL (tablas, índices, constraints) — 100% idempotente, se aplica en cada arranque
     │   ├── migrate.js            ← aplica el schema manualmente
@@ -118,7 +124,8 @@ backend/
         ├── reviews.js             ← moderación de reseñas (admin) y reseñas por producto
         ├── audit.js               ← historial de acciones administrativas (`/api/audit-log`)
         ├── reports.js             ← reportes de ventas por rango de fechas
-        └── public.js               ← catálogo, categorías, destacados y reseñas públicas (sin autenticación)
+        ├── public.js               ← catálogo, categorías, destacados y reseñas públicas (sin autenticación)
+        └── chatbot.js              ← chatbot de atención al cliente (sin autenticación)
 ```
 
 **Estructura del frontend (`frontend/src/`):**
@@ -148,11 +155,13 @@ src/
 │   │   ├── OtpInput.jsx          ← input de 6 casillas para códigos OTP/2FA
 │   │   ├── AnimatedCheck.jsx     ← check animado (confirmaciones, checkout)
 │   │   ├── AuthShell.jsx         ← layout compartido de pantallas de auth pública
-│   │   └── PasswordField.jsx     ← input de contraseña con mostrar/ocultar
+│   │   ├── PasswordField.jsx     ← input de contraseña con mostrar/ocultar
+│   │   └── ChatbotWidget.jsx     ← widget flotante del chatbot de atención al cliente
 │   ├── CountUp.jsx               ← animación de conteo numérico (KPIs, precios, contadores)
 │   ├── ConfirmDialog.jsx         ← diálogo de confirmación reutilizable
 │   ├── ErrorBoundary.jsx         ← red de seguridad ante errores de React sin capturar
 │   ├── ProtectedRoute.jsx        ← guard de rutas por sesión/rol/permiso
+│   ├── ScrollToTop.jsx           ← resetea el scroll al tope en cada cambio de ruta
 │   ├── Avatar.jsx
 │   ├── BrandLogo.jsx
 │   ├── Layout.jsx                ← header/nav del panel admin + outlet
@@ -173,7 +182,6 @@ src/
     │   ├── MyOrders.jsx          ← historial de pedidos del cliente
     │   ├── ProductDetail.jsx     ← detalle de producto (ficha técnica, galería, reseñas)
     │   └── Shop.jsx              ← catálogo de productos
-    ├── Alerts.jsx                ← productos bajo stock mínimo
     ├── AuditLog.jsx              ← historial de acciones administrativas
     ├── Reports.jsx               ← reportes de ventas por rango de fechas
     ├── Categories.jsx
@@ -407,11 +415,11 @@ Ver `backend/src/db/schema.sql` para el DDL completo (incluye `CHECK` constraint
 
 ### 6.1. Respaldo y recuperación de datos (backups)
 
-**En producción (Supabase):** la base de datos de producción vive en Supabase (ver `DATABASE_URL` en `backend/.env`). Supabase toma backups automáticos diarios de la base completa; en el plan gratuito la retención es de 7 días y no incluye restauración point-in-time (eso es solo de los planes pagos). Se pueden descargar/gestionar desde el panel de Supabase → **Database → Backups**.
+**En producción (Neon):** la base de datos de producción vive en Neon (ver `DATABASE_URL` en las variables de entorno de Vercel). Neon mantiene respaldo/restauración a un punto en el tiempo según el plan contratado; revisar el panel de Neon → **Backups/Restore** para el detalle de retención vigente.
 
 > Nota: tanto en desarrollo como en producción, la conexión de la API usa un rol de base de datos de mínimo privilegio (no el superusuario) — ver **10. Seguridad Implementada**.
 
-**Backup manual (local o antes de una entrega/demo):** además del backup automático de Supabase, el proyecto incluye dos scripts propios en `backend/scripts/` que no dependen de tener `pg_dump` instalado:
+**Backup manual (local o antes de una entrega/demo):** además del respaldo del proveedor, el proyecto incluye dos scripts propios en `backend/scripts/` que no dependen de tener `pg_dump` instalado:
 
 ```bash
 cd backend
@@ -421,7 +429,7 @@ npm run restore -- backups/backup_2026-07-04T23-23-06-148Z.json   # restaura un 
 
 - `npm run backup` recorre todas las tablas del esquema `public` y guarda su contenido completo (todas las filas) en un único archivo JSON con timestamp, dentro de `backend/backups/` (carpeta ignorada por git — nunca se sube al repositorio porque contiene datos reales de clientes).
 - `npm run restore` trunca las tablas y reinserta los datos del backup indicado dentro de una única transacción: si algo falla, se revierte todo y la base queda intacta. También resincroniza las secuencias (`SERIAL`) para que no choquen con nuevos registros después de restaurar.
-- Recomendación práctica para la tesis: correr `npm run backup` antes de cada demo o entrega importante, y guardar esa copia fuera del repo (por ejemplo en Drive) como respaldo adicional al automático de Supabase.
+- Recomendación práctica para la tesis: correr `npm run backup` antes de cada demo o entrega importante, y guardar esa copia fuera del repo (por ejemplo en Drive) como respaldo adicional al del proveedor.
 
 ---
 
@@ -531,6 +539,12 @@ npm run restore -- backups/backup_2026-07-04T23-23-06-148Z.json   # restaura un 
 | GET    | `/api/orders/:id`             | Detalle de cualquier pedido           | autent.  |
 | PUT    | `/api/orders/:id/status`      | Cambiar estado del pedido             | autent.  |
 
+### Chatbot de Atención
+
+| Método | Ruta                    | Descripción                                                        | Rol     |
+|--------|-------------------------|---------------------------------------------------------------------|---------|
+| POST   | `/api/chatbot/message`  | Envía un mensaje del usuario y devuelve la respuesta del asistente (motor de reglas, consulta el catálogo real cuando aplica) | público |
+
 **Filtros disponibles en `/api/products`:**
 - `?q=texto` — busca en nombre, SKU, marca, modelo (ILIKE)
 - `?type=motocicleta|accesorio`
@@ -575,7 +589,7 @@ curl -b cookies.txt $API/api/products | head
 2. **Crear producto** (admin) → aparece en la tabla.
 3. **Registrar salida** con cantidad mayor al stock actual → debe rechazarse con `400 Stock insuficiente para salida`.
 4. **Registrar entrada/salida** → el stock se actualiza y aparece en `Movimientos` y `Kárdex`.
-5. **Bajar stock por debajo de `min_stock`** → el producto aparece en `Alertas` (tarjeta ámbar).
+5. **Bajar stock por debajo de `min_stock`** → el producto aparece en el panel "Bajo stock" del `Dashboard` (tarjeta ámbar).
 6. **Cerrar sesión** → redirección a `/admin/login`.
 7. **Login como empleado** → el menú `Usuarios` NO aparece (control de rol) y solo se ven las secciones habilitadas por sus permisos.
 8. **Crear categoría con productos** → no se puede eliminar (FK protegida).
@@ -593,12 +607,15 @@ curl -b cookies.txt $API/api/products | head
 20. **Iniciar sesión en el panel** con usuario/contraseña correctos → no entra directo, pide un código de 6 dígitos enviado al correo; con el código correcto entra, con uno incorrecto lo rechaza (`Código incorrecto`).
 21. **Solicitar recuperación de contraseña del staff** desde `/admin/olvide` → usar el token devuelto en modo desarrollo para restablecerla en `/admin/restablecer`; con la contraseña nueva el login pide el código de verificación como cualquier login.
 22. **Completar una compra** desde el checkout → al cliente le llega un correo de confirmación con el número de pedido, los ítems y el total; si el correo no está configurado, la compra se confirma igual sin bloquear el checkout.
+23. **Abrir el chatbot** (botón flotante en cualquier página pública) y preguntar "¿tienen motos Yamaha disponibles?" → responde con productos reales del catálogo (nombre, precio, stock) con enlace a la ficha de cada uno; preguntar por horario/ubicación/métodos de pago → responde con la información institucional correspondiente.
+24. **Anular un pedido desde el panel admin** (cambiar su estado a "cancelado" en `Pedidos`) → el stock se repone automáticamente (igual que cuando el cliente cancela su propio pedido) y queda registrado en Kárdex; intentar anularlo de nuevo debe rechazarse.
+25. **Dejar un producto en el carrito y cambiarle el precio o el stock desde el panel admin** → al volver al carrito o entrar a Checkout, el precio/cantidad se resincroniza automáticamente contra el catálogo real y se avisa del cambio antes de pagar.
 
 ---
 
 ## 9. Datos / Archivos Adicionales
 
-- Las imágenes de productos se referencian por URL (Unsplash) — no se almacenan binarios.
+- Las imágenes de productos son fotos reales (no genéricas ni generadas), guardadas localmente en `frontend/public/images/products/`: las de motocicletas vienen de Wikimedia Commons bajo licencia CC BY-SA, y las de accesorios de nicho (cascos, cadena, pastillas de freno) del sitio oficial del fabricante correspondiente.
 - El logo de la marca se encuentra en `frontend/public/motonaations.png` y `frontend/src/assets/motonaations.png`.
 - El seed completo está en `backend/src/db/seed.js`.
 - El Kárdex permite exportar el historial de movimientos a PDF (jsPDF).
@@ -625,8 +642,9 @@ curl -b cookies.txt $API/api/products | head
 - Las cookies usan `SameSite=None; Secure=true`, requieren **HTTPS**.
 - Cambiar `JWT_SECRET`, credenciales de admin y contraseña de base de datos antes de exponer.
 - Usar `npm start` (no `dev`).
-- El envío de correos (recuperación de contraseña, 2FA, comprobantes de compra, notificaciones de pedido/stock bajo) ya usa un proveedor real (Gmail SMTP vía `nodemailer`, `GMAIL_USER`/`GMAIL_APP_PASSWORD`); si `DATABASE_URL` cambia de proyecto/Supabase o se despliega en otra cuenta, solo hace falta configurar esas dos variables — si faltan, el sistema vuelve automáticamente al modo de desarrollo (el token/código se devuelve en la respuesta en vez de enviarse por correo).
+- El envío de correos (recuperación de contraseña, 2FA, comprobantes de compra, notificaciones de pedido/stock bajo) ya usa un proveedor real (Gmail SMTP vía `nodemailer`, `GMAIL_USER`/`GMAIL_APP_PASSWORD`); si `DATABASE_URL` cambia de proveedor/proyecto o se despliega en otra cuenta, solo hace falta configurar esas dos variables — si faltan, el sistema vuelve automáticamente al modo de desarrollo (el token/código se devuelve en la respuesta en vez de enviarse por correo).
 - Considerar PM2 o systemd para mantener el proceso vivo (no aplica si se despliega como funciones serverless, ver `backend/vercel.json`).
+- Nota histórica: el plan gratuito de Supabase (proveedor de base de datos usado antes de migrar a Neon) pausaba la base tras un período de inactividad, causando errores 500 puntuales en las rutas públicas hasta reactivarla manualmente. Neon reactiva la base automáticamente en la primera consulta entrante, por lo que ese modo de falla ya no aplica.
 
 ---
 

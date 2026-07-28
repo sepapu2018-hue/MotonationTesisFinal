@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { CustomerProvider } from "@/context/CustomerContext";
 import { CartProvider } from "@/context/CartContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import ScrollToTop from "@/components/ScrollToTop";
 import Layout from "@/components/Layout";
 import PublicLayout from "@/components/PublicLayout";
 
@@ -17,7 +18,6 @@ import Products from "@/pages/Products";
 import Categories from "@/pages/Categories";
 import Suppliers from "@/pages/Suppliers";
 import Movements from "@/pages/Movements";
-import Alerts from "@/pages/Alerts";
 import Users from "@/pages/Users";
 import Kardex from "@/pages/Kardex";
 import Orders from "@/pages/Orders";
@@ -47,6 +47,7 @@ function App() {
           <CartProvider>
             <BrowserRouter>
               <Toaster position="bottom-right" richColors theme="dark" />
+              <ScrollToTop />
               <Routes>
                 {/* Tienda pública */}
                 <Route element={<PublicLayout />}>
@@ -78,7 +79,6 @@ function App() {
                   <Route path="kardex" element={<ProtectedRoute permission="view_kardex"><Kardex /></ProtectedRoute>} />
                   <Route path="pedidos" element={<ProtectedRoute permission="view_orders"><Orders /></ProtectedRoute>} />
                   <Route path="resenas" element={<ProtectedRoute permission="view_reviews"><Reviews /></ProtectedRoute>} />
-                  <Route path="alertas" element={<ProtectedRoute permission="view_alerts"><Alerts /></ProtectedRoute>} />
                   <Route path="reportes" element={<ProtectedRoute permission="view_reports"><Reports /></ProtectedRoute>} />
                   <Route path="usuarios" element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
                   <Route path="auditoria" element={<ProtectedRoute adminOnly><AuditLog /></ProtectedRoute>} />

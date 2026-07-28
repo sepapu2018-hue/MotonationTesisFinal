@@ -20,7 +20,6 @@ export const PERMISSION_OPTIONS = [
   { id: 'view_kardex',     label: 'Ver Kárdex' },
   { id: 'view_orders',     label: 'Ver Pedidos' },
   { id: 'view_reviews',    label: 'Ver Reseñas' },
-  { id: 'view_alerts',     label: 'Ver Alertas' },
   { id: 'view_reports',    label: 'Ver Reportes' },
 ];
 
@@ -53,6 +52,49 @@ function fileToBase64(file) {
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
   });
+}
+
+// Grilla de tarjetas reutilizada por Personal Administrativo y Clientes —
+// antes era una tabla con una fila angosta por usuario.
+function UserGrid({ users, meId, highlightId, badgeVariant, showEdit, onChangePhoto, onRemoveAvatar, onEdit, onDelete, emptyLabel, testidPrefix }) {
+  if (users.length === 0) {
+    return (
+      <div className="px-4 py-6 text-center text-zinc-400 text-xs uppercase tracking-widest">
+        {emptyLabel}
+      </div>
+    );
+  }
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 p-4">
+      {users.map((u) => (
+        <div key={u.id} className={`border border-white/10 bg-black/20 p-4 flex flex-col items-center text-center gap-2 ${u.id === highlightId ? "row-highlight" : ""}`} data-testid={`${testidPrefix}-${u.email}`}>
+          <label className="relative cursor-pointer group" title="Cambiar foto">
+            <Avatar src={u.avatar_url} name={u.name} size={56} />
+            <span className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <Pencil className="h-3.5 w-3.5 text-white" />
+            </span>
+            <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => onChangePhoto(e, u.id)} />
+          </label>
+          <div className="w-full min-w-0">
+            <div className="font-semibold truncate" title={u.name}>{u.name}</div>
+            <div className="text-xs text-zinc-500 truncate" title={u.email}>{u.email}</div>
+          </div>
+          <Badge variant={badgeVariant(u)}>{u.role}</Badge>
+          <div className="flex items-center gap-1 mt-1">
+            {u.avatar_url && (
+              <button onClick={() => onRemoveAvatar(u)} aria-label={`Quitar foto de ${u.name}`} className="p-1.5 text-zinc-400 hover:text-amber-400 transition-colors"><X className="h-4 w-4" /></button>
+            )}
+            {showEdit && (
+              <button onClick={() => onEdit(u)} aria-label={`Editar ${u.name}`} data-testid={`edit-user-${u.email}`} className="p-1.5 text-zinc-400 hover:text-[#10B981] transition-colors"><Edit2 className="h-4 w-4" /></button>
+            )}
+            {u.id !== meId && (
+              <button onClick={() => onDelete(u)} aria-label={`Eliminar ${u.name}`} className="p-1.5 text-zinc-400 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // Checklist de permisos reutilizable entre el form de creación y el de edición.
@@ -209,7 +251,7 @@ export default function Users() {
         {/* Columna izquierda: tablas de staff y clientes */}
         <div className="lg:col-span-2 flex flex-col gap-6">
 
-          {/* ── Tabla: Personal Administrativo ── */}
+          {/* ── Personal Administrativo ── */}
           <Card>
             <div className="px-4 pt-4 pb-2">
               <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
@@ -217,56 +259,22 @@ export default function Users() {
                 <span className="ml-2 text-zinc-400">({staff.length})</span>
               </p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm" data-testid="users-table">
-                <thead className="border-b border-white/10">
-                  <tr className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold text-left">
-                    <th className="px-4 py-3 w-16">Foto</th>
-                    <th className="px-4 py-3">Nombre</th>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Rol</th>
-                    <th className="px-4 py-3 w-36 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {staff.map((u) => (
-                    <tr key={u.id} className={`border-b border-white/5 ${u.id === highlightId ? "row-highlight" : ""}`} data-testid={`user-row-${u.email}`}>
-                      <td className="px-4 py-3">
-                        <label className="inline-block cursor-pointer group relative" title="Cambiar foto">
-                          <Avatar src={u.avatar_url} name={u.name} size={40} />
-                          <span className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Pencil className="h-3.5 w-3.5 text-white" />
-                          </span>
-                          <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => handleFile(e, u.id)} />
-                        </label>
-                      </td>
-                      <td className="px-4 py-3 font-semibold">{u.name}</td>
-                      <td className="px-4 py-3 text-zinc-300">{u.email}</td>
-                      <td className="px-4 py-3"><Badge variant={u.role === "admin" ? "danger" : "info"}>{u.role}</Badge></td>
-                      <td className="px-4 py-3 text-right">
-                        {u.avatar_url && (
-                          <button onClick={() => removeAvatar(u)} aria-label={`Quitar foto de ${u.name}`} className="p-2 text-zinc-400 hover:text-amber-400 transition-colors"><X className="h-4 w-4" /></button>
-                        )}
-                        <button onClick={() => openEdit(u)} aria-label={`Editar ${u.name}`} data-testid={`edit-user-${u.email}`} className="p-2 text-zinc-400 hover:text-[#10B981] transition-colors"><Edit2 className="h-4 w-4" /></button>
-                        {u.id !== me.id && (
-                          <button onClick={() => setToDelete(u)} aria-label={`Eliminar ${u.name}`} className="p-2 text-zinc-400 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {staff.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-6 text-center text-zinc-400 text-xs uppercase tracking-widest">
-                        Sin personal registrado
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <UserGrid
+              users={staff}
+              meId={me.id}
+              highlightId={highlightId}
+              badgeVariant={(u) => (u.role === "admin" ? "danger" : "info")}
+              showEdit
+              onChangePhoto={handleFile}
+              onRemoveAvatar={removeAvatar}
+              onEdit={openEdit}
+              onDelete={setToDelete}
+              emptyLabel="Sin personal registrado"
+              testidPrefix="user-card"
+            />
           </Card>
 
-          {/* ── Tabla: Clientes de la Tienda ── */}
+          {/* ── Clientes de la Tienda ── */}
           <Card>
             <div className="px-4 pt-4 pb-2">
               <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
@@ -274,52 +282,18 @@ export default function Users() {
                 <span className="ml-2 text-zinc-400">({customers.length})</span>
               </p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm" data-testid="customers-table">
-                <thead className="border-b border-white/10">
-                  <tr className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold text-left">
-                    <th className="px-4 py-3 w-16">Foto</th>
-                    <th className="px-4 py-3">Nombre</th>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Rol</th>
-                    <th className="px-4 py-3 w-36 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {customers.map((u) => (
-                    <tr key={u.id} className="border-b border-white/5" data-testid={`user-row-${u.email}`}>
-                      <td className="px-4 py-3">
-                        <label className="inline-block cursor-pointer group relative" title="Cambiar foto">
-                          <Avatar src={u.avatar_url} name={u.name} size={40} />
-                          <span className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Pencil className="h-3.5 w-3.5 text-white" />
-                          </span>
-                          <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => handleFile(e, u.id)} />
-                        </label>
-                      </td>
-                      <td className="px-4 py-3 font-semibold">{u.name}</td>
-                      <td className="px-4 py-3 text-zinc-300">{u.email}</td>
-                      <td className="px-4 py-3"><Badge variant="success">{u.role}</Badge></td>
-                      <td className="px-4 py-3 text-right">
-                        {u.avatar_url && (
-                          <button onClick={() => removeAvatar(u)} aria-label={`Quitar foto de ${u.name}`} className="p-2 text-zinc-400 hover:text-amber-400 transition-colors"><X className="h-4 w-4" /></button>
-                        )}
-                        {u.id !== me.id && (
-                          <button onClick={() => setToDelete(u)} aria-label={`Eliminar ${u.name}`} className="p-2 text-zinc-400 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {customers.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-6 text-center text-zinc-400 text-xs uppercase tracking-widest">
-                        Sin clientes registrados
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <UserGrid
+              users={customers}
+              meId={me.id}
+              highlightId={highlightId}
+              badgeVariant={() => "success"}
+              showEdit={false}
+              onChangePhoto={handleFile}
+              onRemoveAvatar={removeAvatar}
+              onDelete={setToDelete}
+              emptyLabel="Sin clientes registrados"
+              testidPrefix="customer-card"
+            />
           </Card>
 
         </div>

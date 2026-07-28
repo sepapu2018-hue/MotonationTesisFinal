@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { useCustomer } from "@/context/CustomerContext";
 import BrandLogo from "@/components/BrandLogo";
+import ChatbotWidget from "@/components/public/ChatbotWidget";
 import { ShoppingCart, User, LogOut, Package, Menu, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
@@ -178,7 +179,7 @@ export default function PublicLayout() {
             <ul className="space-y-2 text-zinc-500 text-xs">
               <li>contacto@motonation.com</li>
               <li>+593 99 999 9999</li>
-              <li>Guayaquil, Ecuador</li>
+              <li>Quito, Ecuador</li>
             </ul>
           </div>
         </div>
@@ -191,6 +192,8 @@ export default function PublicLayout() {
           </div>
         </div>
       </footer>
+
+      <ChatbotWidget />
     </div>
   );
 }

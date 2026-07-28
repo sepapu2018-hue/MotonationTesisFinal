@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, useMemo } from "react";
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
+import api from "@/lib/api";
 
 const CartContext = createContext(null);
 const STORAGE_KEY = "motonation_cart_v1";
@@ -50,6 +51,49 @@ export function CartProvider({ children }) {
 
   const clear = () => setItems([]);
 
+  // El carrito vive en localStorage y puede tener horas o días de antigüedad:
+  // el precio/stock guardado ahí puede haber quedado desactualizado si el admin
+  // los cambió mientras tanto. Antes de mostrar el total a pagar, se resincroniza
+  // contra el catálogo real para que lo que ve el cliente sea lo que se le cobra.
+  const syncWithCatalog = useCallback(async () => {
+    if (items.length === 0) return { priceChanges: [], removedItems: [], quantityReduced: [] };
+
+    const results = await Promise.allSettled(
+      items.map((i) => api.get(`/public/products/${i.sku}`).then((r) => r.data))
+    );
+
+    const priceChanges = [];
+    const removedItems = [];
+    const quantityReduced = [];
+    const nextItems = [];
+
+    items.forEach((i, idx) => {
+      const result = results[idx];
+      if (result.status !== "fulfilled") {
+        removedItems.push({ name: i.name, reason: "ya no está disponible" });
+        return;
+      }
+      const fresh = result.value;
+      if (!fresh.stock || fresh.stock <= 0) {
+        removedItems.push({ name: i.name, reason: "se agotó" });
+        return;
+      }
+      const freshPrice = Number(fresh.price);
+      if (freshPrice !== i.price) {
+        priceChanges.push({ name: i.name, oldPrice: i.price, newPrice: freshPrice });
+      }
+      let quantity = i.quantity;
+      if (quantity > fresh.stock) {
+        quantityReduced.push({ name: i.name, from: quantity, to: fresh.stock });
+        quantity = fresh.stock;
+      }
+      nextItems.push({ ...i, price: freshPrice, max_stock: fresh.stock, quantity });
+    });
+
+    setItems(nextItems);
+    return { priceChanges, removedItems, quantityReduced };
+  }, [items]);
+
   const totals = useMemo(() => {
     const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
     const tax = subtotal * 0.15;
@@ -64,7 +108,7 @@ export function CartProvider({ children }) {
   }, [items]);
 
   return (
-    <CartContext.Provider value={{ items, addItem, updateQuantity, removeItem, clear, totals }}>
+    <CartContext.Provider value={{ items, addItem, updateQuantity, removeItem, clear, totals, syncWithCatalog }}>
       {children}
     </CartContext.Provider>
   );

@@ -3,11 +3,12 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import api, { formatApiError } from "@/lib/api";
 import { PrimaryButton, GhostButton, Field, inputClass, Badge } from "@/components/ui-kit";
-import { ArrowDownToLine, ArrowUpFromLine, Plus, X, Activity, Loader2, ClipboardCheck } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Plus, X, Activity, Loader2, ClipboardCheck, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { useDialogA11y } from "@/hooks/useDialogA11y";
 import PageLoader from "@/components/public/PageLoader";
 
 const emptyForm = { product_id: "", type: "entrada", quantity: 1, reason: "", direction: "positivo", supplier_id: "" };
+const PAGE_SIZE = 15;
 
 export default function Movements() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -22,6 +23,8 @@ export default function Movements() {
   const [submitting, setSubmitting] = useState(false);
   const [highlightId, setHighlightId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [detailMov, setDetailMov] = useState(null);
 
   const load = () => api.get("/movements?limit=300").then((r) => setMovs(r.data)).catch((err) => toast.error(formatApiError(err))).finally(() => setLoading(false));
 
@@ -60,6 +63,7 @@ export default function Movements() {
       setForm(emptyForm);
       await load();
       api.get("/products").then((r) => setProducts(r.data)).catch((err) => toast.error(formatApiError(err)));
+      setPage(1);
       setHighlightId(data?.id);
       setTimeout(() => setHighlightId(null), 1800);
     } catch (err) {
@@ -76,6 +80,11 @@ export default function Movements() {
     const sal = recent.filter((m) => m.type === "salida" || m.type === "venta" || (m.type === "ajuste" && m.direction === "negativo")).reduce((s, m) => s + m.quantity, 0);
     return { recent: recent.length, ent, sal, total: movs.length };
   }, [movs]);
+
+  const pageItems = useMemo(
+    () => movs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [movs, page]
+  );
 
   return (
     <div className="max-w-[1600px] mx-auto px-6 py-8">
@@ -122,26 +131,38 @@ export default function Movements() {
             <div className="p-6"><PageLoader variant="list" /></div>
           ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed min-w-[640px]">
+              <colgroup>
+                <col className="w-[18%]" />
+                <col className="w-[14%]" />
+                <col className="w-[45%]" />
+                <col className="w-[13%]" />
+                <col className="w-[10%]" />
+              </colgroup>
               <thead className="border-b border-white/10">
                 <tr className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold text-left">
                   <th className="px-4 py-3">Fecha</th>
                   <th className="px-4 py-3">Tipo</th>
                   <th className="px-4 py-3">Producto</th>
-                  <th className="px-4 py-3">SKU</th>
                   <th className="px-4 py-3 text-right">Cantidad</th>
-                  <th className="px-4 py-3">Motivo</th>
-                  <th className="px-4 py-3">Usuario</th>
+                  <th className="px-4 py-3 text-right"></th>
                 </tr>
               </thead>
               <tbody>
-                {movs.map((m) => {
+                {pageItems.map((m) => {
                   const isIncrease = m.type === "entrada" || (m.type === "ajuste" && m.direction === "positivo");
                   const badgeVariant = m.type === "ajuste" ? "info" : (m.type === "entrada" ? "success" : "danger");
                   const label = m.type === "ajuste" ? `ajuste ${m.direction === "positivo" ? "(+)" : "(−)"}` : m.type;
                   return (
-                    <tr key={m.id} className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors ${m.id === highlightId ? "row-highlight" : ""}`}>
-                      <td className="px-4 py-3 font-mono text-xs text-zinc-400">{new Date(m.created_at).toLocaleString("es")}</td>
+                    <tr
+                      key={m.id}
+                      onClick={() => setDetailMov(m)}
+                      data-testid={`movement-row-${m.id}`}
+                      className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer ${m.id === highlightId ? "row-highlight" : ""}`}
+                    >
+                      <td className="px-4 py-3 font-mono text-xs text-zinc-400 whitespace-nowrap">
+                        {new Date(m.created_at).toLocaleString("es", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </td>
                       <td className="px-4 py-3">
                         <Badge variant={badgeVariant}>
                           {m.type === "ajuste"
@@ -150,25 +171,40 @@ export default function Movements() {
                           {label}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3">
-                        {m.product_name}
-                        {m.supplier_name && <div className="text-xs text-zinc-500">Proveedor: {m.supplier_name}</div>}
+                      <td className="px-4 py-3 max-w-[220px]">
+                        <div className="truncate" title={m.product_name}>{m.product_name}</div>
+                        <div className="text-xs text-zinc-500 font-mono truncate">{m.product_sku}</div>
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-zinc-400">{m.product_sku}</td>
-                      <td className={`px-4 py-3 text-right timer text-xl ${isIncrease ? "text-emerald-400" : "text-amber-400"}`}>
+                      <td className={`px-4 py-3 text-right timer text-xl whitespace-nowrap ${isIncrease ? "text-emerald-400" : "text-amber-400"}`}>
                         {isIncrease ? "+" : "−"}{m.quantity}
                       </td>
-                      <td className="px-4 py-3 text-zinc-300">{m.reason || "—"}</td>
-                      <td className="px-4 py-3 text-zinc-400">{m.user_name}</td>
+                      <td className="px-4 py-3 text-right">
+                        <Eye className="h-4 w-4 text-zinc-500 inline-block" />
+                      </td>
                     </tr>
                   );
                 })}
-                {movs.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-12 text-center text-zinc-500 text-xs uppercase tracking-widest">Sin movimientos registrados</td></tr>
+                {pageItems.length === 0 && (
+                  <tr><td colSpan={5} className="px-4 py-12 text-center text-zinc-500 text-xs uppercase tracking-widest">Sin movimientos registrados</td></tr>
                 )}
               </tbody>
             </table>
           </div>
+          )}
+          {stats.total > PAGE_SIZE && (
+            <div className="flex items-center justify-between gap-4 px-4 py-3 border-t border-white/10 text-sm" data-testid="pagination">
+              <span className="text-zinc-500 text-xs">
+                Página {page} de {Math.max(1, Math.ceil(stats.total / PAGE_SIZE))} · {stats.total} movimientos
+              </span>
+              <div className="flex gap-2">
+                <GhostButton type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} testid="prev-page" className="px-3 py-1.5">
+                  <ChevronLeft className="h-4 w-4" />
+                </GhostButton>
+                <GhostButton type="button" onClick={() => setPage((p) => (p * PAGE_SIZE < stats.total ? p + 1 : p))} disabled={page * PAGE_SIZE >= stats.total} testid="next-page" className="px-3 py-1.5">
+                  <ChevronRight className="h-4 w-4" />
+                </GhostButton>
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -248,6 +284,65 @@ export default function Movements() {
               </PrimaryButton>
             </div>
           </form>
+        </div>
+      )}
+
+      {detailMov && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" onClick={() => setDetailMov(null)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="movement-detail-title"
+            className="w-full max-w-md bg-[#141414] border border-white/10 p-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            data-testid="movement-detail-modal"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#10B981] mb-1">// Detalle del movimiento</div>
+                <h3 id="movement-detail-title" className="font-display font-black text-2xl uppercase">
+                  {detailMov.type === "ajuste" ? `Ajuste (${detailMov.direction === "positivo" ? "+" : "−"})` : detailMov.type}
+                </h3>
+              </div>
+              <button type="button" onClick={() => setDetailMov(null)} aria-label="Cerrar" className="text-zinc-500 hover:text-white"><X /></button>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Fecha</div>
+                <div className="text-zinc-200">{new Date(detailMov.created_at).toLocaleString("es", { dateStyle: "long", timeStyle: "short" })}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Producto</div>
+                <div className="text-zinc-200">{detailMov.product_name}</div>
+                <div className="text-xs text-zinc-500 font-mono">{detailMov.product_sku}</div>
+              </div>
+              {detailMov.supplier_name && (
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Proveedor</div>
+                  <div className="text-zinc-200">{detailMov.supplier_name}</div>
+                </div>
+              )}
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Cantidad</div>
+                <div className={`timer text-2xl ${detailMov.type === "salida" || detailMov.type === "venta" || (detailMov.type === "ajuste" && detailMov.direction === "negativo") ? "text-amber-400" : "text-emerald-400"}`}>
+                  {detailMov.type === "salida" || detailMov.type === "venta" || (detailMov.type === "ajuste" && detailMov.direction === "negativo") ? "−" : "+"}{detailMov.quantity}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Motivo</div>
+                <div className="text-zinc-200">{detailMov.reason || "—"}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Usuario</div>
+                <div className="text-zinc-200">{detailMov.user_name}</div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <GhostButton type="button" onClick={() => setDetailMov(null)}>Cerrar</GhostButton>
+            </div>
+          </div>
         </div>
       )}
     </div>
