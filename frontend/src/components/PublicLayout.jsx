@@ -34,6 +34,32 @@ export default function PublicLayout() {
     navigate("/");
   };
 
+  // Acceso oculto al panel interno: presionar "M" 3 veces seguidas (fuera de un campo de texto)
+  useEffect(() => {
+    let count = 0;
+    let resetTimer = null;
+    const handleKeyDown = (e) => {
+      const tag = document.activeElement?.tagName;
+      const isTyping = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || document.activeElement?.isContentEditable;
+      if (isTyping || e.key.toLowerCase() !== "m") {
+        count = 0;
+        return;
+      }
+      count += 1;
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(() => { count = 0; }, 1200);
+      if (count === 3) {
+        count = 0;
+        navigate("/admin/login");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      clearTimeout(resetTimer);
+    };
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col">
       <div className="h-1 checker w-full" />
@@ -184,11 +210,8 @@ export default function PublicLayout() {
           </div>
         </div>
         <div className="border-t border-white/5">
-          <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between text-[10px] uppercase tracking-widest text-zinc-400 font-mono">
+          <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-center text-[10px] uppercase tracking-widest text-zinc-400 font-mono">
             <span>© {new Date().getFullYear()} Motonation · Todos los derechos reservados</span>
-            <Link to="/admin/login" className="hover:text-zinc-400 transition-colors" data-testid="admin-discrete-link">
-              · Sistema interno ·
-            </Link>
           </div>
         </div>
       </footer>
