@@ -10,6 +10,14 @@ import PageLoader from "@/components/public/PageLoader";
 import { formatCurrency as money } from "@/lib/utils";
 
 const CANCELABLE = ["pendiente", "pagado"];
+// Debe coincidir con CANCEL_WINDOW_MINUTES en backend/src/routes/orders.js
+const CANCEL_WINDOW_MINUTES = 60;
+
+function canStillCancel(order) {
+  if (!CANCELABLE.includes(order.status)) return false;
+  const minutesSinceOrder = (Date.now() - new Date(order.created_at).getTime()) / 60000;
+  return minutesSinceOrder <= CANCEL_WINDOW_MINUTES;
+}
 
 const STATUS = {
   pendiente: { c: "text-zinc-400 border-zinc-400/40 bg-zinc-400/10", l: "Pendiente" },
@@ -162,14 +170,20 @@ export default function MyOrders() {
 
                 {CANCELABLE.includes(detail.status) && (
                   <div className="mt-6 pt-4 border-t border-white/10">
-                    <DangerButton
-                      type="button"
-                      data-testid="cancel-order-btn"
-                      className="w-full"
-                      onClick={() => setConfirmCancel(true)}
-                    >
-                      Cancelar pedido
-                    </DangerButton>
+                    {canStillCancel(detail) ? (
+                      <DangerButton
+                        type="button"
+                        data-testid="cancel-order-btn"
+                        className="w-full"
+                        onClick={() => setConfirmCancel(true)}
+                      >
+                        Cancelar pedido
+                      </DangerButton>
+                    ) : (
+                      <p className="text-xs text-zinc-500 text-center">
+                        El plazo para cancelar este pedido ({CANCEL_WINDOW_MINUTES} minutos desde la compra) ya expiró. Contacta al soporte de MotoNation.
+                      </p>
+                    )}
                   </div>
                 )}
               </>

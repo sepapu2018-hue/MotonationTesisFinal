@@ -11,6 +11,10 @@ const { checkLowStockAlert } = require('../utils/stockAlerts');
 
 const router = express.Router();
 
+// Ventana durante la cual el cliente puede cancelar su propio pedido.
+// Pasado este tiempo, solo el admin puede anularlo desde el panel.
+const CANCEL_WINDOW_MINUTES = 60;
+
 const checkoutSchema = z.object({
   items: z.array(z.object({
     product_id: z.string().uuid(),
@@ -183,6 +187,10 @@ router.put('/mine/:id/cancel', customerRequired, asyncHandler(async (req, res) =
     if (!order) throw httpError(404, 'Pedido no encontrado');
     if (!['pendiente', 'pagado'].includes(order.status)) {
       throw httpError(400, 'Este pedido ya no se puede cancelar');
+    }
+    const minutesSinceOrder = (Date.now() - new Date(order.created_at).getTime()) / 60000;
+    if (minutesSinceOrder > CANCEL_WINDOW_MINUTES) {
+      throw httpError(400, `El plazo para cancelar este pedido (${CANCEL_WINDOW_MINUTES} minutos desde la compra) ya expiró. Contacta al soporte de MotoNation.`);
     }
 
     const items = (await client.query('SELECT * FROM order_items WHERE order_id = $1', [order.id])).rows;
