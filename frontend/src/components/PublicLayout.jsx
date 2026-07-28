@@ -56,7 +56,7 @@ export default function PublicLayout() {
     const handleKeyDown = (e) => {
       const tag = document.activeElement?.tagName;
       const isTyping = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || document.activeElement?.isContentEditable;
-      if (isTyping || e.key.toLowerCase() !== "m") {
+      if (isTyping || !e.key || e.key.toLowerCase() !== "m") {
         count = 0;
         return;
       }
