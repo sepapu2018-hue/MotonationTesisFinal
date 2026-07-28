@@ -34,6 +34,21 @@ export default function PublicLayout() {
     navigate("/");
   };
 
+  // Acceso oculto al panel interno desde celular: tocar el logo 5 veces seguidas
+  // (en touch no hay atajo de teclado posible sin teclado físico)
+  const logoTapCount = useRef(0);
+  const logoTapTimer = useRef(null);
+  const handleLogoTap = (e) => {
+    logoTapCount.current += 1;
+    clearTimeout(logoTapTimer.current);
+    logoTapTimer.current = setTimeout(() => { logoTapCount.current = 0; }, 1500);
+    if (logoTapCount.current >= 5) {
+      logoTapCount.current = 0;
+      e.preventDefault();
+      navigate("/admin/login");
+    }
+  };
+
   // Acceso oculto al panel interno: presionar "M" 3 veces seguidas (fuera de un campo de texto)
   useEffect(() => {
     let count = 0;
@@ -66,7 +81,7 @@ export default function PublicLayout() {
 
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0A0A0A]/90 backdrop-blur-md">
         <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center gap-6">
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3" onClick={handleLogoTap}>
             <BrandLogo size={36} />
             <div className="hidden sm:block">
               <div className="font-display font-black text-base uppercase leading-none tracking-tight">Motonation</div>

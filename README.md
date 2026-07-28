@@ -363,7 +363,7 @@ yarn install      # o `npm install`
 yarn start        # o `npm start`
 ```
 
-Abre <http://localhost:3000> en el navegador. Verás la tienda pública; el panel administrativo está en `/admin/login` (no hay ningún enlace visible hacia él desde el sitio público — a propósito, para no exponerlo al cliente; también se puede llegar presionando la tecla **M** tres veces seguidas en cualquier página pública).
+Abre <http://localhost:3000> en el navegador. Verás la tienda pública; el panel administrativo está en `/admin/login` (no hay ningún enlace visible hacia él desde el sitio público — a propósito, para no exponerlo al cliente. Se llega escribiendo esa ruta directamente, presionando la tecla **M** tres veces seguidas en escritorio, o tocando el logo 5 veces seguidas en celular).
 
 ### 4.9. Iniciar sesión
 
