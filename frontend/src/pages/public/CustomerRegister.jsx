@@ -86,9 +86,11 @@ export default function CustomerRegister() {
             checked={acceptedTerms}
             onChange={(e) => setAcceptedTerms(e.target.checked)}
             data-testid="reg-terms"
-            className="mt-0.5 accent-[#10B981]"
+            className="mt-0.5 accent-[#10B981] shrink-0"
           />
-          Acepto los <span className="text-zinc-300 underline">términos y condiciones</span> y la <span className="text-zinc-300 underline">política de privacidad</span> de MotoNation.
+          <span>
+            Acepto los <span className="text-zinc-300 underline">términos y condiciones</span> y la <span className="text-zinc-300 underline">política de privacidad</span> de MotoNation.
+          </span>
         </label>
 
         {error && <div className="col-span-2 border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">{error}</div>}
