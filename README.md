@@ -22,6 +22,8 @@ Aplicación full-stack para la concesionaria MotoNation que centraliza el contro
 
 El desarrollo de la plataforma se encuentra en una fase avanzada, con la infraestructura principal y todos los módulos contemplados en el plan de titulación implementados y operativos. El sistema permite gestionar las operaciones internas del negocio de manera eficiente, atender consultas de clientes de forma automatizada y mantiene una arquitectura escalable para futuras mejoras.
 
+Lo único pendiente es la adquisición de un dominio propio, a gestionarse mediante el beneficio gratuito de GitHub Student Developer Pack; mientras tanto, el sistema es completamente funcional y accesible a través del dominio temporal que provee Vercel.
+
 ## Funcionalidades Implementadas
 
 - **Infraestructura Base y Autenticación:** Servidor completamente operativo, conexión estable con la base de datos PostgreSQL y sistema de autenticación basado en roles de Administrador y Empleado, con tokens de acceso y refresco (JWT), protección anti fuerza bruta en los login y cabeceras de seguridad HTTP (helmet).
