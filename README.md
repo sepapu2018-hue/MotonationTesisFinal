@@ -19,9 +19,9 @@ Aplicación full-stack para la concesionaria MotoNation que centraliza el contro
 
 ## Estado Actual del Proyecto
 
-El desarrollo de la plataforma se encuentra en una fase avanzada, con la infraestructura principal y todos los módulos contemplados en el plan de titulación implementados y operativos. El sistema permite gestionar las operaciones internas del negocio de manera eficiente, atender consultas de clientes de forma automatizada y mantiene una arquitectura escalable para futuras mejoras.
+El proyecto se encuentra **finalizado**, con la infraestructura principal y todos los módulos contemplados en el plan de titulación implementados, probados y operativos en producción. El sistema permite gestionar las operaciones internas del negocio de manera eficiente, atender consultas de clientes de forma automatizada y mantiene una arquitectura escalable para futuras mejoras.
 
-Lo único pendiente es la adquisición de un dominio propio, a gestionarse mediante el beneficio gratuito de GitHub Student Developer Pack; mientras tanto, el sistema es completamente funcional y accesible a través del dominio temporal que provee Vercel.
+El sistema cuenta con dominio propio, **[motonation.systems](https://motonation.systems)**, obtenido mediante el beneficio de GitHub Student Developer Pack y conectado al despliegue en Vercel.
 
 ## Funcionalidades Implementadas
 
