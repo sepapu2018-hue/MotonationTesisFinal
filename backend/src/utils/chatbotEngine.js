@@ -107,6 +107,12 @@ const STRONG_PRODUCT_WORDS = [
 // decidir una búsqueda de catálogo cuando ninguna intención estática matcheó.
 const WEAK_PRODUCT_WORDS = ['tienen', 'tiene', 'hay', 'busco', 'buscando', 'quiero', 'necesito', 'oferta'];
 
+// Palabras de categoría: van en STOPWORDS (no sirven como término de búsqueda
+// cuando acompañan a otra palabra, ej. "moto yamaha" busca solo "yamaha"),
+// pero si el mensaje es *únicamente* una de estas palabras ("motos", "accesorios")
+// igual hay que activar la búsqueda y filtrar por tipo (ver searchProducts).
+const CATEGORY_WORDS = ['moto', 'motos', 'motocicleta', 'motocicletas', 'accesorio', 'accesorios'];
+
 // Palabras sin valor discriminante para buscar en el catálogo (se descartan del término de búsqueda).
 const STOPWORDS = new Set([
   ...STRONG_PRODUCT_WORDS,
@@ -167,6 +173,7 @@ async function handleMessage(rawMessage) {
 
   const hasStrongProductSignal = STRONG_PRODUCT_WORDS.some((w) => normalized.includes(w));
   const hasWeakProductSignal = WEAK_PRODUCT_WORDS.some((w) => normalized.includes(w));
+  const hasCategorySignal = CATEGORY_WORDS.some((w) => normalized.includes(w));
 
   // Mejor intención estática por puntaje de palabras clave
   let bestIntent = null;
@@ -186,7 +193,7 @@ async function handleMessage(rawMessage) {
   const searchTokens = extractSearchTokens(normalized);
   const shouldSearchCatalog =
     hasStrongProductSignal ||
-    (bestScore === 0 && (hasWeakProductSignal || searchTokens.length > 0));
+    (bestScore === 0 && (hasWeakProductSignal || hasCategorySignal || searchTokens.length > 0));
 
   if (shouldSearchCatalog) {
     const products = await searchProducts(searchTokens, normalized);
@@ -205,7 +212,7 @@ async function handleMessage(rawMessage) {
         })),
       };
     }
-    if (hasStrongProductSignal || hasWeakProductSignal) {
+    if (hasStrongProductSignal || hasWeakProductSignal || hasCategorySignal) {
       return {
         intent: 'disponibilidad_producto_sin_resultados',
         reply: 'No encontré productos que coincidan con tu búsqueda. Puedes revisar el catálogo completo en la sección "Tienda".',
