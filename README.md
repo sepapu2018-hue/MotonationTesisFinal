@@ -17,6 +17,8 @@ Aplicación full-stack para la concesionaria MotoNation que centraliza el contro
 | 3 | Incorporar funcionalidades de control de stock, como alertas básicas de productos con baja disponibilidad. | Panel "Bajo stock" en el Dashboard con notificación automática por correo a los administradores cuando un producto cae por debajo de su mínimo. |
 | 4 | Evaluar el funcionamiento del sistema mediante pruebas funcionales, con el fin de verificar su correcto desempeño y usabilidad en el entorno real de la empresa. | Suite de pruebas automatizadas con Jest (sección 8.1) y checklist de pruebas funcionales manuales validadas con el beneficiario (sección 8.3). |
 
+Al planificar el proyecto fuimos cautelosos con el alcance, sin saber con certeza cuánto podríamos avanzar en el tiempo disponible. Conforme el desarrollo fue avanzando bien, decidimos junto al Product Owner incorporar como parte de la entrega final varias mejoras que ya teníamos pensadas: un chatbot de atención al cliente, una tienda en línea completa (carrito, checkout y cuentas de cliente), verificación en dos pasos y otras medidas de seguridad, reseñas de productos y reportes de ventas. La metodología Scrum, elegida desde el inicio del proyecto, es justamente la que nos permitió ir ajustando el alcance de esta manera sobre la marcha.
+
 ## Estado Actual del Proyecto
 
 El proyecto se encuentra **finalizado**, con la infraestructura principal y todos los módulos contemplados en el plan de titulación implementados, probados y operativos en producción. El sistema permite gestionar las operaciones internas del negocio de manera eficiente, atender consultas de clientes de forma automatizada y mantiene una arquitectura escalable para futuras mejoras.
