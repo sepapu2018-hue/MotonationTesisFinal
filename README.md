@@ -12,11 +12,10 @@ Aplicación full-stack para la concesionaria MotoNation que centraliza el contro
 
 | # | Objetivo específico | Cómo se cumple en el sistema |
 |---|----------------------|-------------------------------|
-| 1 | Analizar los requerimientos funcionales y no funcionales de la página web de la concesionaria. | Requerimientos levantados con el Product Owner y documentados como historias de usuario; se reflejan en el modelo de datos (`backend/src/db/schema.sql`) y en los roles/permisos del sistema (sección 10). |
-| 2 | Diseñar una interfaz web intuitiva y accesible para la información de la empresa y sus productos. | Interfaz construida con Tailwind CSS bajo una identidad visual consistente (verde esmeralda + negro), navegación clara entre secciones institucionales y catálogo, componentes reutilizables y ajustes de accesibilidad (foco de teclado, contraste, roles ARIA). |
-| 3 | Implementar un módulo de inventario digital para el registro y consulta de motos y accesorios. | Módulo de Productos, Categorías, Proveedores, Movimientos (entrada/salida/venta/ajuste), Kárdex con exportación a PDF, costeo por promedio ponderado y Alertas de stock mínimo (secciones 6 y 7). |
-| 4 | Integrar un chatbot que responda de forma automatizada las consultas frecuentes de los clientes. | Chatbot de atención al cliente (`backend/src/utils/chatbotEngine.js`) visible en todo el sitio público; responde horario, ubicación, métodos de pago, envíos, garantía y disponibilidad/precio consultando el catálogo real en vivo. |
-| 5 | Evaluar el funcionamiento del sistema mediante pruebas que verifiquen su desempeño y usabilidad. | Suite de pruebas automatizadas con Jest (sección 8.1) y checklist de pruebas funcionales manuales validadas con el beneficiario (sección 8.3). |
+| 1 | Analizar los requerimientos funcionales y no funcionales del sistema, con el fin de identificar las necesidades del control de inventario en la empresa. | Requerimientos levantados con el Product Owner; se reflejan en el modelo de datos (`backend/src/db/schema.sql`) y en los roles/permisos del sistema (sección 10). |
+| 2 | Diseñar e implementar una plataforma web que permita el registro, actualización y consulta del inventario de motocicletas y accesorios. | Módulo de Productos, Categorías, Proveedores, Movimientos (entrada/salida/venta/ajuste), Kárdex con exportación a PDF y costeo por promedio ponderado (secciones 6 y 7). |
+| 3 | Incorporar funcionalidades de control de stock, como alertas básicas de productos con baja disponibilidad. | Panel "Bajo stock" en el Dashboard con notificación automática por correo a los administradores cuando un producto cae por debajo de su mínimo. |
+| 4 | Evaluar el funcionamiento del sistema mediante pruebas funcionales, con el fin de verificar su correcto desempeño y usabilidad en el entorno real de la empresa. | Suite de pruebas automatizadas con Jest (sección 8.1) y checklist de pruebas funcionales manuales validadas con el beneficiario (sección 8.3). |
 
 ## Estado Actual del Proyecto
 
