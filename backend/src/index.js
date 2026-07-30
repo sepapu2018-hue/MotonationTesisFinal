@@ -43,6 +43,8 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:5174',
+  'https://motonation.systems',
+  'https://www.motonation.systems',
   process.env.FRONTEND_URL,
   process.env.CORS_ORIGIN,
 ]
