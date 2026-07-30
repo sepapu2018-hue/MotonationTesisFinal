@@ -9,7 +9,7 @@ import { Card, PageHeader, PrimaryButton, GhostButton, Field, inputClass, Badge 
 import Avatar from "@/components/Avatar";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useDialogA11y } from "@/hooks/useDialogA11y";
-import { Trash2, UserPlus, Upload, X, Pencil, Edit2 } from "lucide-react";
+import { Trash2, UserPlus, Upload, X, Pencil, Edit2, Search } from "lucide-react";
 
 export const PERMISSION_OPTIONS = [
   { id: 'view_dashboard',  label: 'Ver Dashboard' },
@@ -151,6 +151,13 @@ export default function Users() {
   const staff = users.filter((u) => u.role === "admin" || u.role === "empleado");
   const customers = users.filter((u) => u.role === "customer");
 
+  const [customerSearch, setCustomerSearch] = useState("");
+  const filteredCustomers = customers.filter((c) => {
+    const q = customerSearch.trim().toLowerCase();
+    if (!q) return true;
+    return c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q);
+  });
+
   const handleFile = async (e, target = "form") => {
     setError("");
     const file = e.target.files?.[0];
@@ -276,14 +283,25 @@ export default function Users() {
 
           {/* ── Clientes de la Tienda ── */}
           <Card>
-            <div className="px-4 pt-4 pb-2">
+            <div className="px-4 pt-4 pb-2 flex items-center justify-between gap-4 flex-wrap">
               <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
                 Clientes de la Tienda
-                <span className="ml-2 text-zinc-400">({customers.length})</span>
+                <span className="ml-2 text-zinc-400">({filteredCustomers.length})</span>
               </p>
+              <div className="flex items-center gap-2 border border-white/15 px-3 py-1.5 focus-within:border-[#10B981]">
+                <Search className="h-3.5 w-3.5 text-zinc-500" />
+                <input
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                  placeholder="Buscar por nombre o correo…"
+                  aria-label="Buscar clientes"
+                  className="bg-transparent outline-none text-xs w-48"
+                  data-testid="customer-search"
+                />
+              </div>
             </div>
             <UserGrid
-              users={customers}
+              users={filteredCustomers}
               meId={me.id}
               highlightId={highlightId}
               badgeVariant={() => "success"}
