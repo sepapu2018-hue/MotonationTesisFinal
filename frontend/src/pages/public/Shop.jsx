@@ -51,8 +51,19 @@ export default function Shop() {
   const sort = searchParams.get("sort") || "newest";
 
   useEffect(() => {
-    api.get("/public/categories").then((r) => setCats(r.data)).catch((err) => toast.error(formatApiError(err)));
-  }, []);
+    api.get("/public/categories", { params: type ? { type } : {} })
+      .then((r) => setCats(r.data))
+      .catch((err) => toast.error(formatApiError(err)));
+  }, [type]);
+
+  // Si la categoría elegida ya no tiene productos del tipo seleccionado, se limpia
+  // (ej. estabas en "Naked" y cambiaste a Accesorios: no tiene sentido dejarla marcada).
+  useEffect(() => {
+    if (categoryId && cats.length > 0 && !cats.some((c) => c.id === categoryId && c.product_count > 0)) {
+      setParam("category", "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cats]);
 
   useEffect(() => {
     setLoading(true);
@@ -154,7 +165,7 @@ export default function Shop() {
                   >
                     Todas
                   </button>
-                  {cats.map((c) => (
+                  {cats.filter((c) => c.product_count > 0).map((c) => (
                     <button
                       key={c.id}
                       onClick={() => setParam("category", c.id)}

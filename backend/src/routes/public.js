@@ -102,18 +102,23 @@ router.get('/products/:sku', asyncHandler(async (req, res) => {
 }));
 
 // 3. OBTENER CATEGORÍAS CON CONTADOR DE ÍTEMS PUBLICADOS
+// ?type=motocicleta|accesorio filtra el conteo por tipo, para que el filtro de
+// categorías de la tienda no muestre categorías de motos cuando se filtra por
+// accesorios (y viceversa) — una categoría no tiene un tipo fijo en el modelo,
+// se infiere de qué productos tiene realmente cargados.
 router.get('/categories', asyncHandler(async (req, res) => {
+  const type = ['motocicleta', 'accesorio'].includes(req.query.type) ? req.query.type : null;
   const rows = await query(`
     SELECT
       c.id,
       c.name,
       c.description,
-      COUNT(p.id) FILTER (WHERE p.is_published = true)::int AS product_count
+      COUNT(p.id) FILTER (WHERE p.is_published = true AND ($1::text IS NULL OR p.type = $1))::int AS product_count
     FROM categories c
     LEFT JOIN products p ON p.category_id = c.id
     GROUP BY c.id, c.name, c.description
     ORDER BY c.name ASC
-  `);
+  `, [type]);
 
   res.json(rows);
 }));
