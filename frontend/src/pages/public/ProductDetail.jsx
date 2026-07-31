@@ -49,7 +49,7 @@ export default function ProductDetail() {
   const submitReview = (e) => {
     e.preventDefault();
     if (!reviewForm.name.trim() || !reviewForm.city.trim() || !reviewForm.text.trim()) {
-      toast.error("Completá nombre, ciudad y comentario");
+      toast.error("Completa nombre, ciudad y comentario");
       return;
     }
     setSubmittingReview(true);
@@ -269,7 +269,7 @@ export default function ProductDetail() {
           </div>
 
           <div className="border border-white/10 bg-[#0E0E0E] p-6">
-            <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-4">// Dejá tu reseña</div>
+            <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-4">// Deja tu reseña</div>
             <form onSubmit={submitReview} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <input
@@ -300,7 +300,7 @@ export default function ProductDetail() {
                 </div>
               </div>
               <textarea
-                placeholder="Contanos tu experiencia con este producto..."
+                placeholder="Cuéntanos tu experiencia con este producto..."
                 value={reviewForm.text}
                 onChange={(e) => setReviewForm({ ...reviewForm, text: e.target.value })}
                 rows={3}

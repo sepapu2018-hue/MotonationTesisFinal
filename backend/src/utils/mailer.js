@@ -88,7 +88,7 @@ async function sendOrderConfirmationEmail(to, order, items) {
           <tr><td style="font-weight:bold; padding-top:8px;">Total</td><td style="text-align:right; font-weight:bold; padding-top:8px; color:#10B981;">${money(order.total)}</td></tr>
         </table>
         <p style="color:#999; font-size:12px; margin-top:24px;">Dirección de envío: ${escapeHtml(order.shipping_address)}</p>
-        <p style="color:#999; font-size:12px;">Podés ver el detalle y el estado de tu pedido desde "Mis pedidos" en tu cuenta de MotoNation.</p>
+        <p style="color:#999; font-size:12px;">Puedes ver el detalle y el estado de tu pedido desde "Mis pedidos" en tu cuenta de MotoNation.</p>
       </div>
     `,
   });
@@ -121,7 +121,7 @@ async function sendNewOrderAdminEmail(adminEmails, order, items) {
         <table style="width:100%; font-size:14px;">
           <tr><td style="font-weight:bold;">Total</td><td style="text-align:right; font-weight:bold; color:#10B981;">${money(order.total)}</td></tr>
         </table>
-        <p style="color:#999; font-size:12px; margin-top:24px;">Gestioná este pedido desde el panel, en "Pedidos".</p>
+        <p style="color:#999; font-size:12px; margin-top:24px;">Gestiona este pedido desde el panel, en "Pedidos".</p>
       </div>
     `,
   });
@@ -137,7 +137,7 @@ async function sendLowStockAlertEmail(adminEmails, product) {
       <div style="font-family: Arial, sans-serif; background:#0A0A0A; color:#f5f5f5; padding:32px; border-radius:4px; max-width:520px; margin:0 auto;">
         <h2 style="color:#F59E0B; margin-top:0;">⚠ Alerta de stock bajo</h2>
         <p><strong>${escapeHtml(product.name)}</strong> (SKU ${escapeHtml(product.sku)}) llegó a <strong style="color:#F59E0B;">${product.stock} unidades</strong>, por debajo del mínimo configurado (${product.min_stock}).</p>
-        <p style="color:#999; font-size:12px;">Revisá el producto desde "Productos" o "Alertas" en el panel para reponer stock.</p>
+        <p style="color:#999; font-size:12px;">Revisa el producto desde "Productos" o "Alertas" en el panel para reponer stock.</p>
       </div>
     `,
   });

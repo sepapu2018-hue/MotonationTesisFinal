@@ -80,16 +80,16 @@ export default function ChatbotWidget() {
           role="dialog"
           aria-label="Chat de atención MotoNation"
           data-testid="chatbot-panel"
-          className="fixed bottom-24 right-6 z-50 w-[min(92vw,380px)] max-h-[70vh] flex flex-col border border-white/10 bg-[#0E0E0E] shadow-2xl shadow-black/60"
+          className="fixed bottom-24 right-6 z-50 w-[min(92vw,380px)] max-h-[min(70vh,calc(100dvh_-_7rem))] flex flex-col border border-white/10 bg-[#0E0E0E] shadow-2xl shadow-black/60 animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 duration-200"
         >
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-black">
+          <div className="shrink-0 flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-black">
             <div className="h-8 w-8 rounded-full bg-[#10B981]/15 border border-[#10B981]/40 flex items-center justify-center">
               <Bot className="h-4 w-4 text-[#10B981]" />
             </div>
             <div className="font-display font-bold uppercase text-xs tracking-widest">Asistente Motonation</div>
           </div>
 
-          <div ref={scrollRef} aria-live="polite" className="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
+          <div ref={scrollRef} aria-live="polite" className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 text-sm">
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
@@ -137,7 +137,7 @@ export default function ChatbotWidget() {
           </div>
 
           {messages.length <= 1 && (
-            <div className="px-3 pb-2 flex flex-wrap gap-1.5">
+            <div className="shrink-0 px-3 pb-2 flex flex-wrap gap-1.5">
               {QUICK_REPLIES.map((q) => (
                 <button
                   key={q}
@@ -150,7 +150,7 @@ export default function ChatbotWidget() {
             </div>
           )}
 
-          <form onSubmit={onSubmit} className="flex items-center gap-2 border-t border-white/10 p-3">
+          <form onSubmit={onSubmit} className="shrink-0 flex items-center gap-2 border-t border-white/10 p-3">
             <input
               ref={inputRef}
               value={input}

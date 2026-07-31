@@ -26,7 +26,7 @@ export default function Cart() {
       <div className="max-w-xl mx-auto py-32 text-center px-6">
         <ShoppingBag className="h-16 w-16 text-zinc-400 mx-auto mb-6" />
         <div className="font-display font-black text-4xl uppercase">Tu carrito está vacío</div>
-        <p className="text-zinc-500 mt-3">Empezá a agregar productos desde la tienda</p>
+        <p className="text-zinc-500 mt-3">Empieza a agregar productos desde la tienda</p>
         <Link to="/tienda" className="inline-block mt-8 bg-[#10B981] hover:bg-[#34D399] text-black px-8 py-3 font-display uppercase tracking-widest font-bold">
           Ir a la tienda
         </Link>

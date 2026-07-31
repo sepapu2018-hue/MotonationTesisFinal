@@ -87,7 +87,7 @@ export default function ProductFormModal({ open, editing, cats, onClose, onSaved
     try {
       const dataUrl = await fileToCompressedDataUrl(file);
       if (dataUrl.length > MAX_IMAGE_DATA_URL_LENGTH) {
-        setImageError("La imagen es muy grande incluso comprimida, probá con otra");
+        setImageError("La imagen es muy grande incluso comprimida, prueba con otra");
         return;
       }
       setForm((f) => ({ ...f, image_url: dataUrl }));
@@ -112,7 +112,7 @@ export default function ProductFormModal({ open, editing, cats, onClose, onSaved
     try {
       const dataUrl = await fileToCompressedDataUrl(file);
       if (dataUrl.length > MAX_IMAGE_DATA_URL_LENGTH) {
-        setGalleryError("La imagen es muy grande incluso comprimida, probá con otra");
+        setGalleryError("La imagen es muy grande incluso comprimida, prueba con otra");
         return;
       }
       setForm((f) => ({ ...f, images: [...f.images, dataUrl] }));

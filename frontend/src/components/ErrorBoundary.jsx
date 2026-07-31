@@ -31,7 +31,7 @@ export default class ErrorBoundary extends Component {
           </div>
           <h1 className="font-display font-black text-2xl uppercase">Algo salió mal</h1>
           <p className="text-sm text-zinc-400 mt-2 leading-relaxed">
-            Ocurrió un error inesperado en la aplicación. Podés volver al inicio o recargar la página.
+            Ocurrió un error inesperado en la aplicación. Puedes volver al inicio o recargar la página.
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <GhostButton type="button" onClick={() => window.location.reload()}>Recargar</GhostButton>

@@ -22,7 +22,7 @@ const STATS = [
   { value: "15+", label: "Años en el mercado" },
   { value: "8.500", label: "Clientes felices" },
   { value: "120+", label: "Modelos disponibles" },
-  { value: "24/7", label: "Las 24 hora" },
+  { value: "24/7", label: "Las 24 horas" },
 ];
 
 
@@ -116,7 +116,7 @@ export default function Home() {
   const submitReview = (e) => {
     e.preventDefault();
     if (!reviewForm.name.trim() || !reviewForm.city.trim() || !reviewForm.text.trim()) {
-      toast.error("Completá todos los campos");
+      toast.error("Completa todos los campos");
       return;
     }
     setSubmittingReview(true);
@@ -233,7 +233,7 @@ export default function Home() {
         <div className="flex items-end justify-between mb-10">
           <div>
             <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-2">// Colecciones</div>
-            <h2 className="font-display font-black text-5xl uppercase leading-none">Elegí tu estilo</h2>
+            <h2 className="font-display font-black text-5xl uppercase leading-none">Elige tu estilo</h2>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -244,7 +244,7 @@ export default function Home() {
             <div className="absolute inset-0 p-8 flex flex-col justify-end">
               <div className="text-[10px] uppercase tracking-[0.3em] text-[#10B981] font-mono mb-2">01 — Motos</div>
               <div className="font-display font-black text-4xl md:text-5xl uppercase leading-none">Motocicletas</div>
-              <div className="text-zinc-300 text-sm mt-3 max-w-md">Sport, naked, adventure, scooter. Encontrá la moto que se adapta a tu ruta.</div>
+              <div className="text-zinc-300 text-sm mt-3 max-w-md">Sport, naked, adventure, scooter. Encuentra la moto que se adapta a tu ruta.</div>
               <div className="mt-5 inline-flex items-center gap-2 text-[#10B981] text-xs uppercase tracking-widest font-bold">
                 Explorar <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
               </div>
@@ -273,7 +273,7 @@ export default function Home() {
         <div className="flex items-end justify-between mb-10">
           <div>
             <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-2">// Categorías</div>
-            <h2 className="font-display font-black text-5xl uppercase leading-none">Explorá</h2>
+            <h2 className="font-display font-black text-5xl uppercase leading-none">Explora</h2>
           </div>
           <Link to="/tienda" className="text-xs uppercase tracking-widest font-bold text-[#10B981] hover:underline">Ver todo →</Link>
         </div>
@@ -396,7 +396,7 @@ export default function Home() {
 
           {/* Columna derecha: formulario */}
           <div className="border border-white/10 bg-[#0E0E0E] p-7 sticky top-6">
-          <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-4">// Dejá tu reseña</div>
+          <div className="text-[10px] text-[#10B981] font-mono uppercase tracking-[0.3em] mb-4">// Deja tu reseña</div>
           <form onSubmit={submitReview} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input
@@ -436,7 +436,7 @@ export default function Home() {
             </div>
 
             <textarea
-              placeholder="Contanos tu experiencia..."
+              placeholder="Cuéntanos tu experiencia..."
               value={reviewForm.text}
               onChange={(e) => setReviewForm({ ...reviewForm, text: e.target.value })}
               rows={3}
@@ -487,7 +487,7 @@ export default function Home() {
             Listos para<br /><span className="text-[#10B981]">acelerar</span>?
           </h2>
           <p className="text-zinc-400 mt-6 max-w-xl mx-auto">
-            Encontrá la moto perfecta o el equipamiento que necesitás para tu próxima ruta.
+            Encuentra la moto perfecta o el equipamiento que necesitas para tu próxima ruta.
           </p>
           <Link to="/tienda"
             className="inline-flex items-center gap-3 mt-10 bg-[#10B981] hover:bg-[#34D399] text-black font-display uppercase tracking-widest font-black px-10 py-4 transition-colors">

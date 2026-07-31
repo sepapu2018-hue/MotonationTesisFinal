@@ -25,7 +25,7 @@ export default function CustomerRegister() {
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!acceptedTerms) {
-      setError("Tenés que aceptar los términos y condiciones para crear tu cuenta");
+      setError("Tienes que aceptar los términos y condiciones para crear tu cuenta");
       return;
     }
     setError("");

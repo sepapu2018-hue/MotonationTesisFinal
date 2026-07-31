@@ -258,7 +258,7 @@ export default function Shop() {
           ) : sorted.length === 0 ? (
             <div className="border border-white/10 bg-[#0E0E0E] py-20 text-center">
               <div className="font-display font-black text-3xl uppercase">Sin resultados</div>
-              <p className="text-zinc-500 mt-2">Probá con otros filtros</p>
+              <p className="text-zinc-500 mt-2">Prueba con otros filtros</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="shop-grid">
